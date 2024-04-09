@@ -89,6 +89,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
             switch msg.Type {
                 case tea.KeyEnter:
                     m.textinput.Value() // Get value of input
+                    m.textinput.SetValue("")
             }
     }
 

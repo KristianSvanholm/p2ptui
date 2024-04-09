@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-var peers = make([]*Peer, 0)
+var peers = make(map[string]*Peer)
 var Name string
 
 var wsUpgrader = websocket.Upgrader{
@@ -20,25 +20,37 @@ var wsUpgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
+// Someone else connect to me
 func ConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	connection, err := wsUpgrader.Upgrade(w, r, nil) // Upgrade to ws
 	if err != nil {
-		fmt.Println("FUCK")
 		http.Error(w, "Couldn't convert request to websocket", http.StatusInternalServerError)
 		return
 	}
 
-	addPeer(connection)
+    p := addPeer(connection)
+    if p == nil {
+        return
+    }
+
+    //if host Share all of your peers with them?
+    go listen(p)
 }
 
+// Me connect to someone else
 func Connect(url url.URL) {
 	connection, errcode, err := websocket.DefaultDialer.Dial(url.String(), nil)
 	if err != nil {
 		log.Fatal("Could not connect to network. Bye.\n", err, errcode)
 	}
 
-	addPeer(connection)
+    p := addPeer(connection)
+    if p == nil {
+        return
+    }
+
+    go listen(p)
 }
 
 func disconnect() {
@@ -52,6 +64,7 @@ func listen(peer *Peer) {
 		err := peer.Socket.ReadJSON(&pkt)
 		if err != nil {
 			//disconnect()
+            peer.Socket.Close()
 			return
 			//continue //todo :: figure out what to do here
 		}
@@ -71,8 +84,11 @@ func listen(peer *Peer) {
 
 }
 
+// Peer has told you they are leaving.
+// Remove them from your peers and close the connection
 func leave(peer *Peer) {
 	peer.Socket.Close()
+    delete(peers,peer.Ip)
 }
 
 func name(peer *Peer, name string) {
@@ -94,17 +110,36 @@ func Broadcast(t any, channel int) {
 	}
 }
 
-func addPeer(c *websocket.Conn) {
+func Tell(p *Peer, t any, channel int) {
+    pkt := Packet{
+        Channel: channel,
+        Data: t,
+    }
+
+    p.Send(pkt)
+}
+
+func addPeer(c *websocket.Conn) *Peer {
+
+    addr := c.RemoteAddr().String()
 
 	peer := Peer{
-		Ip:     c.RemoteAddr().String(),
+		Ip:     addr,
 		Name:   "not_disclosed",
 		Socket: c,
 	}
-	peers = append(peers, &peer)
 
-	Broadcast(Name, 1)
-	go listen(&peer)
+    _, found := peers[addr]
+    if found {
+        c.Close()
+        return nil
+    }
+
+    Tell(&peer, Name, 1)
+
+    peers[addr] = &peer
+
+    return &peer
 }
 
 type Peer struct {
