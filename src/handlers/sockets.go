@@ -2,15 +2,18 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"net/url"
 	"sync"
+
+	"github.com/gorilla/websocket"
 )
 
 var peers = make(map[string]*Peer)
 var Name string
+var Host bool = false
+var Port string
 
 var wsUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -22,35 +25,56 @@ var wsUpgrader = websocket.Upgrader{
 
 // Someone else connect to me
 func ConnectionHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+   	w.Header().Set("Access-Control-Allow-Origin", "*")
 	connection, err := wsUpgrader.Upgrade(w, r, nil) // Upgrade to ws
-	if err != nil {
+
+    if err != nil {
 		http.Error(w, "Couldn't convert request to websocket", http.StatusInternalServerError)
 		return
 	}
 
-    p := addPeer(connection)
+    currPeers := ips()
+
+    p := addPeer(connection, r.Header.Get("Origin"))
     if p == nil {
         return
     }
 
-    //if host Share all of your peers with them?
+    if Host {
+        Tell(p, currPeers, 3)
+    }
+
     go listen(p)
 }
 
 // Me connect to someone else
 func Connect(url url.URL) {
-	connection, errcode, err := websocket.DefaultDialer.Dial(url.String(), nil)
-	if err != nil {
+
+    header :=http.Header{}
+    header.Set("Origin","0.0.0.0:"+Port)
+	connection, errcode, err := websocket.DefaultDialer.Dial(url.String(), header)
+	if err != nil { 
 		log.Fatal("Could not connect to network. Bye.\n", err, errcode)
 	}
 
-    p := addPeer(connection)
+    p := addPeer(connection, connection.RemoteAddr().String())
     if p == nil {
         return
     }
 
     go listen(p)
+}
+
+func ips() []string {
+    keys := make([]string, len(peers))
+
+    i := 0
+    for k := range peers {
+        keys[i]= k
+        i++
+    }
+    return keys
 }
 
 func disconnect() {
@@ -78,8 +102,10 @@ func listen(peer *Peer) {
 			break
 		case 2:
 			leave(peer)
+        case 3:
+            others(pkt.Data)
 			break
-		}
+        }
 	}
 
 }
@@ -89,6 +115,22 @@ func listen(peer *Peer) {
 func leave(peer *Peer) {
 	peer.Socket.Close()
     delete(peers,peer.Ip)
+}
+
+func others(data any) {
+    var ips []interface{}
+    switch data.(type) {
+        case []interface{}: 
+            ips = data.([]interface{})
+        break;
+    }
+    
+    fmt.Println(ips)
+    for _, ip := range ips {
+        addr := fmt.Sprintf("%v", ip)
+        url := url.URL{Scheme: "ws", Host: addr, Path: "/api/connect/"}
+        Connect(url)
+    }
 }
 
 func name(peer *Peer, name string) {
@@ -119,17 +161,16 @@ func Tell(p *Peer, t any, channel int) {
     p.Send(pkt)
 }
 
-func addPeer(c *websocket.Conn) *Peer {
-
-    addr := c.RemoteAddr().String()
+func addPeer(c *websocket.Conn, address string) *Peer {
+    fmt.Println(c.RemoteAddr(), c.LocalAddr())
 
 	peer := Peer{
-		Ip:     addr,
+		Ip:     address,
 		Name:   "not_disclosed",
 		Socket: c,
 	}
 
-    _, found := peers[addr]
+    _, found := peers[address]
     if found {
         c.Close()
         return nil
@@ -137,7 +178,7 @@ func addPeer(c *websocket.Conn) *Peer {
 
     Tell(&peer, Name, 1)
 
-    peers[addr] = &peer
+    peers[address] = &peer
 
     return &peer
 }

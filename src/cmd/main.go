@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
-	"log"
+
+
+	//	"log"
 	"net/http"
 	"net/url"
 	"p2p/src/handlers"
@@ -14,21 +16,20 @@ import (
 
 func main() {
 
-    m := NewModel()
+    /*m := NewModel()
 
     p := tea.NewProgram(m)
 
     _, err := p.Run()
     if err != nil {
         log.Fatal(err)
-    }
-
+    }*/
 
 	http.HandleFunc("/api/connect/", handlers.ConnectionHandler)
 
-	var port, hostq string
+	var hostq string
 	fmt.Print("Port: ")
-	fmt.Scanln(&port)
+	fmt.Scanln(&handlers.Port)
 	fmt.Print("Name: ")
 	fmt.Scanln(&handlers.Name)
 	fmt.Print("Host? y/n: ")
@@ -37,6 +38,7 @@ func main() {
 
 	if hostq == "y" {
 		fmt.Println("u are host")
+        handlers.Host = true
 	} else {
 		var ntwrk string
 		fmt.Print("Host port: ")
@@ -45,7 +47,7 @@ func main() {
 		handlers.Connect(url)
 	}
 
-	go http.ListenAndServe(":"+port, nil)
+    go http.ListenAndServe(":"+handlers.Port, nil)
 
 	writeMsg()
 }
@@ -90,6 +92,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
                 case tea.KeyEnter:
                     m.textinput.Value() // Get value of input
                     m.textinput.SetValue("")
+                case tea.KeyCtrlC, tea.KeyEsc:
+                    return m, tea.Quit
             }
     }
 
