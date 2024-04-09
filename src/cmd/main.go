@@ -8,6 +8,7 @@ import (
 	"p2p/src/handlers"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -61,25 +62,47 @@ func writeMsg() {
 
 type Model struct {
     title string
+    textinput textinput.Model
 
 }
 
 func NewModel() Model {
+    ti := textinput.New()
+    ti.Placeholder = "Enter search term"
+    ti.Focus()
+
     return Model{
         title: "hello world",
+        textinput: ti,
     }
 }
 
 func (m Model) Init() tea.Cmd {
-    return nil
+    return textinput.Blink
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    return m, nil
+    var cmd tea.Cmd
+
+    switch msg := msg.(type) {
+        case tea.KeyMsg: 
+            switch msg.Type {
+                case tea.KeyEnter:
+                    m.textinput.Value() // Get value of input
+            }
+    }
+
+
+    m.textinput, cmd = m.textinput.Update(msg)
+
+    return m, cmd
 }
 
 func (m Model) View() string {
-    return m.title
+    s := m.textinput.View()
+    return s
 }
 
+// Cmd
 
+// Msg
