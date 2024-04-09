@@ -2,13 +2,26 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"p2p/src/handlers"
 	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
+
+    m := NewModel()
+
+    p := tea.NewProgram(m)
+
+    _, err := p.Run()
+    if err != nil {
+        log.Fatal(err)
+    }
+
 
 	http.HandleFunc("/api/connect/", handlers.ConnectionHandler)
 
@@ -45,3 +58,28 @@ func writeMsg() {
 		handlers.Broadcast(txt, 0)
 	}
 }
+
+type Model struct {
+    title string
+
+}
+
+func NewModel() Model {
+    return Model{
+        title: "hello world",
+    }
+}
+
+func (m Model) Init() tea.Cmd {
+    return nil
+}
+
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    return m, nil
+}
+
+func (m Model) View() string {
+    return m.title
+}
+
+
