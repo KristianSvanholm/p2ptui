@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/gorilla/websocket v1.5.1
+	github.com/mitchellh/mapstructure v1.5.0
 )
 
 require (
