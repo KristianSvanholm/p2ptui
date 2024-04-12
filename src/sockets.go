@@ -18,7 +18,6 @@ import (
 
 var Peers = make(map[string]*structs.Peer)
 var Name string
-var Host bool = false
 var Port string
 var Player *structs.Coords = structs.Coords{}.New()
 var M *Model
@@ -49,16 +48,12 @@ func ConnectionHandler(w http.ResponseWriter, r *http.Request, program *tea.Prog
 		return
 	}
 
-    sendWelcome(p, ips)
+    sendWelcome(p, ips, r.Header.Get("Join") == "true")
 
 	go listen(program, p)
 }
 
-func sendWelcome(p *structs.Peer, ips []string) {
-    if !Host {
-        return
-    } 
-
+func sendWelcome(p *structs.Peer, ips []string, join bool) {
     data := map[string]any{
         "others": ips,
         "field": M.Field, // This is probably bad
@@ -68,10 +63,11 @@ func sendWelcome(p *structs.Peer, ips []string) {
 }
 
 // Me connect to someone else
-func Connect(program *tea.Program, url url.URL) {
+func Connect(program *tea.Program, url url.URL, join bool) {
 
 	header := http.Header{}
 	header.Set("Origin", "0.0.0.0:"+Port)
+    header.Set("Join", strconv.FormatBool(join))
 	connection, errcode, err := websocket.DefaultDialer.Dial(url.String(), header)
 	if err != nil {
 		log.Fatal("Could not connect to network. Bye.\n", err, errcode)
@@ -214,7 +210,7 @@ func welcome(program *tea.Program, data interface{}) {
 	for _, ip := range ips.([]interface{}) {
         addr := fmt.Sprintf("%v", ip)
 		url := url.URL{Scheme: "ws", Host: addr, Path: "/api/connect/"}
-		Connect(program, url)
+		Connect(program, url, false)
 	}
 }
 
@@ -231,7 +227,6 @@ func hello(program *tea.Program, peer *structs.Peer, data interface{}) {
         if err != nil {
             // Uh-oh
         }
-        M.Status = seed.(string)
         *M.Rng = *rand.New(rand.NewSource(int64(s)))
     }
 

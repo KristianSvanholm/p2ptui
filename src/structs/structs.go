@@ -5,8 +5,12 @@ import (
 	"p2p/src/constants"
 	"sync"
 
-	"github.com/gorilla/websocket"
+    "github.com/gorilla/websocket"
 )
+
+type StatusUpdate struct {
+    Update string
+}
 
 type Movement struct {
 	Id  string

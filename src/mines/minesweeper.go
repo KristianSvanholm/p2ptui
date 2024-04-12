@@ -85,7 +85,7 @@ func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) {
 		}
 	}
 
-    f.checkWin()
+    go f.checkWin()
 	//sendChanges()
 
 }
@@ -93,16 +93,9 @@ func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) {
 func (f *Field) checkWin() {
 	if (f.TotalCells == f.TotalRevealed+f.TotalMines) && f.TotalMines == f.TotalFlags {
 		//SystemMessage("Win!")
-		InitField(constants.Size)
+		*f = *InitField(constants.Size)
 	}
 }
-
-/*
-func sendChanges() {
-	msg := structs.ClientMsg{MsgType: "Update", MsgData: Field}
-	sendToAll(&msg)
-}
-*/
 
 func (f *Field) explode() {
 	//SystemMessage(fmt.Sprintf("Loss! - %s fucked up", name))

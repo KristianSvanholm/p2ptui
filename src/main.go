@@ -40,21 +40,18 @@ func main() {
 	fmt.Scanln(&hostq)
 	hostq = strings.ToLower(hostq)
 
-	if hostq == "y" {
-		fmt.Println("u are host")
-		Host = true
-	} else {
+	if hostq != "y" {
 		var ntwrk string
 		fmt.Print("Host port: ")
 		fmt.Scanln(&ntwrk)
 		url := url.URL{Scheme: "ws", Host: "0.0.0.0:" + ntwrk, Path: "/api/connect/"}
-        
+       
+        // Set new seed for whole network
         seed := time.Now().UTC().UnixNano()
         *M.Rng = *rand.New(rand.NewSource(seed))
         M.Seed = fmt.Sprint(seed)
-        M.Status = fmt.Sprint(seed)
-
-		Connect(program, url)
+       
+		Connect(program, url, true)
 	}
 
 	go program.Run()
@@ -68,7 +65,7 @@ func main() {
 }
 
 type Model struct {
-	Status    string
+	status    string
 	player   *structs.Coords
     peers    map[string]structs.Coords
 	chat     []string
@@ -94,7 +91,7 @@ func NewModel() *Model {
 	cp.SetContent("Welcome!")
 
 	return &Model{
-		Status:    "hello world",
+		status:    "hello world",
         player:   Player,
         peers:    make(map[string]structs.Coords),
         Rng:      rand.New(rand.NewSource(time.Now().UTC().UnixNano())),
@@ -217,8 +214,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         } else {
             m.Field.SetFlag(msg.Pos)
         }	
-    case mines.Field:
-        m.Field = msg
+    case mines.Field: m.Field = msg
+    case structs.StatusUpdate: m.status = msg.Update
     }
 
 	*m.player = *c.Normalize()
@@ -238,7 +235,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	return fmt.Sprintf("%s\n%s\n%s\n%s",
-        m.Status,
+        m.status,
 		m.gameport.View(),
 		m.chatport.View(),
 		m.textarea.View())
