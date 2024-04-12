@@ -13,6 +13,11 @@ type Movement struct {
 	Pos Coords
 }
 
+type Action struct {
+    Pos Coords
+    Dig bool
+}
+
 type Chat struct {
 	Txt string
 }
@@ -74,8 +79,7 @@ func (c *Coords) Normalize() *Coords {
 
 type Cell struct {
 	Revealed  bool `json:"revealed"`
-	TrueCount int  `json:"-"`
-	Mine      bool `json:"-"`
+	Mine      bool `json:"mine"`
 	Flagged   bool `json:"flagged"`
 	Count     int  `json:"count"`
 }

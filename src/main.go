@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"p2p/src/constants"
 	"p2p/src/mines"
 	"p2p/src/structs"
+	"strconv"
+	"time"
 
 	//"log"
 	"net/http"
@@ -20,7 +23,9 @@ import (
 
 func main() {
 
-	program := tea.NewProgram(NewModel())
+    M = NewModel()
+
+	program := tea.NewProgram(M)
 
 	http.HandleFunc("/api/connect/", func (w http.ResponseWriter, r *http.Request) {
         ConnectionHandler(w, r, program)
@@ -43,6 +48,12 @@ func main() {
 		fmt.Print("Host port: ")
 		fmt.Scanln(&ntwrk)
 		url := url.URL{Scheme: "ws", Host: "0.0.0.0:" + ntwrk, Path: "/api/connect/"}
+        
+        seed := time.Now().UTC().UnixNano()
+        *M.Rng = *rand.New(rand.NewSource(seed))
+        M.Seed = fmt.Sprint(seed)
+        M.Status = fmt.Sprint(seed)
+
 		Connect(program, url)
 	}
 
@@ -57,11 +68,13 @@ func main() {
 }
 
 type Model struct {
-	status    string
+	Status    string
 	player   *structs.Coords
     peers    map[string]structs.Coords
 	chat     []string
-    field    mines.Field
+    Seed     string
+    Rng      *rand.Rand
+    Field    mines.Field
 	gameport viewport.Model
 	chatport viewport.Model
 	textarea textarea.Model
@@ -81,10 +94,11 @@ func NewModel() *Model {
 	cp.SetContent("Welcome!")
 
 	return &Model{
-		status:    "hello world",
+		Status:    "hello world",
         player:   Player,
         peers:    make(map[string]structs.Coords),
-        field:    mines.InitField(constants.Size),
+        Rng:      rand.New(rand.NewSource(time.Now().UTC().UnixNano())),
+        Field:    *mines.InitField(constants.Size),
 		textarea: ta,
 		gameport: vp,
 		chatport: cp,
@@ -99,26 +113,28 @@ func newTable(board [][]string, m *Model) *table.Table {
 		BorderColumn(true).
 		Rows(board...).
         StyleFunc(func(row, col int) lipgloss.Style {
-    
+
+            style := lipgloss.NewStyle().Padding(0,1)/*.Background(lipgloss.ANSIColor(15)) */
+
             c := structs.Coords{X: col, Y: row-1}
             
             // Player cursor
             if *m.player == c {
-                return lipgloss.NewStyle().Padding(0,1).Bold(true).Foreground(lipgloss.ANSIColor(160))
+                return style.Bold(true).Foreground(lipgloss.ANSIColor(160))
             }
 
             // Peer cursors
             for _, p := range m.peers {
                 if p == c {
-                    return lipgloss.NewStyle().Padding(0,1).Bold(true).Foreground(lipgloss.ANSIColor(199))
+                    return style.Bold(true).Foreground(lipgloss.ANSIColor(199))
                 }
             }
             
-            return lipgloss.NewStyle().Padding(0,1)
+            return style/*.Foreground(lipgloss.ANSIColor(8))*/
         })
 }
 
-func generateBoard() [][]string {
+func generateBoard(f *mines.Field) [][]string {
     size := constants.Size
 
 	board := make([][]string, size)
@@ -126,7 +142,20 @@ func generateBoard() [][]string {
 		row := make([]string, size)
 
 		for j := 0; j < size; j++ {
-			row[j] = "O"
+            cell := f.Field[j][i]
+            if cell.Revealed {
+                if cell.Count != 0 {
+                    row[j] = strconv.Itoa(cell.Count)
+                } else {
+                    row[j] = " " // NOTE: NOT A SPACE - SPECIAL SYMBOL
+                }
+            } else {
+                if cell.Flagged {
+                    row[j] = "▲"
+                } else {
+                    row[j] = "■"
+                }
+            }
 		}
 
 		board[i] = row
@@ -155,6 +184,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
+            case tea.KeyShiftUp:
+                m.Field.SetFlag(*m.player)
+                Broadcast(*m.player, constants.Flag)
+            case tea.KeyShiftDown:
+                m.Field.Dig(m.player, m.Rng)
+                Broadcast(*m.player, constants.Dig)
 		    case tea.KeyEnter:
     			v := m.textarea.Value() // Get value of input
     			Broadcast(v, constants.Chat)
@@ -176,11 +211,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     case structs.Chat: 
         m.chat = append(m.chat, msg.Txt)
         m.chatport.GotoBottom()
-	}
+    case structs.Action:
+        if msg.Dig {
+            m.Field.Dig(&msg.Pos, m.Rng)
+        } else {
+            m.Field.SetFlag(msg.Pos)
+        }	
+    case mines.Field:
+        m.Field = msg
+    }
 
 	*m.player = *c.Normalize()
 
-    board := generateBoard()
+    board := generateBoard(&m.Field)
 
     if old_c != c { // Broadcast move if not same position
         Broadcast(c, constants.Move)
@@ -195,7 +238,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	return fmt.Sprintf("%s\n%s\n%s\n%s",
-        m.status,
+        m.Status,
 		m.gameport.View(),
 		m.chatport.View(),
 		m.textarea.View())

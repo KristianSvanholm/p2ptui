@@ -8,16 +8,16 @@ import (
 )
 
 type Field struct {
-    FirstMove bool
-    TotalMines int
-    TotalFlags int
-    TotalRevealed int
-    TotalCells int
-    mutex sync.Mutex
-    Field [][]structs.Cell 
+    FirstMove bool `json:"firstMove"`
+    TotalMines int `json:"totalMines"`
+    TotalFlags int `json:"totalFlags"`
+    TotalRevealed int `json:"totalRevealed"`
+    TotalCells int `json:"totalCells"`
+    mutex sync.Mutex `json:"-"`
+    Field [][]structs.Cell `json:"field"`
 }
 
-func InitField(size int) Field {
+func InitField(size int) *Field {
 
     f := Field{
         FirstMove: true,
@@ -32,13 +32,12 @@ func InitField(size int) Field {
 		f.Field[i] = make([]structs.Cell, size)
 	}
 
-    return f
+    return &f
 }
 
-func (f *Field) setFlag(c structs.Coords) {
+func (f *Field) SetFlag(c structs.Coords) {
 
     f.mutex.Lock()
-    defer f.mutex.Unlock()
 
 	cell := &f.Field[c.X][c.Y]
 
@@ -57,9 +56,11 @@ func (f *Field) setFlag(c structs.Coords) {
 
 	f.checkWin()
 	//sendChanges()
+
+    defer f.mutex.Unlock()
 }
 
-func (f *Field) openCell(c *structs.Coords, name string) {
+func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) {
 
     f.mutex.Lock()
     defer f.mutex.Unlock()
@@ -70,13 +71,15 @@ func (f *Field) openCell(c *structs.Coords, name string) {
 	}
 
 	if f.FirstMove {
+
         f.FirstMove = false
-		f.PlantMines(c)
+		f.PlantMines(c, rng)
 		f.CalculateCells()
 		f.flip(c)
 	} else {
+
 		if cell.Mine {
-			f.explode(name)
+			go f.explode()
 		} else {
 			f.flip(c)
 		}
@@ -84,6 +87,7 @@ func (f *Field) openCell(c *structs.Coords, name string) {
 
     f.checkWin()
 	//sendChanges()
+
 }
 
 func (f *Field) checkWin() {
@@ -100,25 +104,21 @@ func sendChanges() {
 }
 */
 
-func (f *Field) explode(name string) {
+func (f *Field) explode() {
 	//SystemMessage(fmt.Sprintf("Loss! - %s fucked up", name))
-	*f = InitField(constants.Size)
+	*f = *InitField(constants.Size)
 }
 
 func (f *Field) flip(c *structs.Coords) {
     
-    f.mutex.Lock()
-    defer f.mutex.Unlock()
-
 	size := len(f.Field)
 
 	cell := &f.Field[c.X][c.Y]
-	cell.Count = cell.TrueCount
 	cell.Revealed = true
 	cell.Flagged = false
 	f.TotalRevealed++
 
-	if cell.TrueCount != 0 {
+	if cell.Count != 0 {
 		return
 	}
 
@@ -139,10 +139,7 @@ func validCell(c *structs.Coords, size int) bool {
 	return !(c.X < 0 || c.Y < 0 || c.X == size || c.Y == size)
 }
 
-func (f * Field) PlantMines(c *structs.Coords) {
-
-    f.mutex.Lock()
-    defer f.mutex.Unlock()
+func (f * Field) PlantMines(c *structs.Coords, rng *rand.Rand) {
 
 	for x, row := range f.Field {
 		for y := range row {
@@ -150,7 +147,7 @@ func (f * Field) PlantMines(c *structs.Coords) {
 				continue
 			}
     
-			if rand.Intn(10) == 1 {
+			if rng.Intn(10) == 1 {
 				f.Field[x][y].Mine = true
 				f.TotalMines++
 			}
@@ -160,13 +157,10 @@ func (f * Field) PlantMines(c *structs.Coords) {
 
 func (f * Field) CalculateCells() {
 
-    f.mutex.Lock()
-    defer f.mutex.Unlock()
-
 	for x, row := range f.Field {
 		for y, cell := range row {
 			if !cell.Mine {
-				f.Field[x][y].TrueCount = f.cellTotal(x, y)
+				f.Field[x][y].Count = f.cellTotal(x, y)
 			}
 		}
 	}

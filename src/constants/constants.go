@@ -8,6 +8,8 @@ const (
     Chat WsEvent = iota
     Hello
     Leave
-    Others
+    Welcome
     Move
+    Flag
+    Dig
 )

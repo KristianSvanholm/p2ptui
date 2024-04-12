@@ -3,12 +3,17 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"p2p/src/constants"
+	"p2p/src/mines"
 	"p2p/src/structs"
+	"strconv"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gorilla/websocket"
+	"github.com/mitchellh/mapstructure"
 )
 
 var Peers = make(map[string]*structs.Peer)
@@ -16,6 +21,7 @@ var Name string
 var Host bool = false
 var Port string
 var Player *structs.Coords = structs.Coords{}.New()
+var M *Model
 
 var wsUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -36,18 +42,29 @@ func ConnectionHandler(w http.ResponseWriter, r *http.Request, program *tea.Prog
 		return
 	}
 
-	currPeers := ips()
+    ips := ips() // Get list before adding new peer (!)
 
-	p := addPeer(connection, r.Header.Get("Origin"))
+	p := addPeer(connection, r.Header.Get("Origin"), false)
 	if p == nil {
 		return
 	}
 
-	if Host {
-		Tell(p, currPeers, constants.Others)
-	}
+    sendWelcome(p, ips)
 
 	go listen(program, p)
+}
+
+func sendWelcome(p *structs.Peer, ips []string) {
+    if !Host {
+        return
+    } 
+
+    data := map[string]any{
+        "others": ips,
+        "field": M.Field, // This is probably bad
+    }
+
+    Tell(p, data, constants.Welcome)
 }
 
 // Me connect to someone else
@@ -60,7 +77,7 @@ func Connect(program *tea.Program, url url.URL) {
 		log.Fatal("Could not connect to network. Bye.\n", err, errcode)
 	}
 
-	p := addPeer(connection, connection.RemoteAddr().String())
+	p := addPeer(connection, connection.RemoteAddr().String(), true)
 	if p == nil {
 		return
 	}
@@ -99,7 +116,7 @@ func Tell(p *structs.Peer, t any, channel constants.WsEvent) {
 	p.Send(pkt)
 }
 
-func addPeer(c *websocket.Conn, address string) *structs.Peer {
+func addPeer(c *websocket.Conn, address string, seeded bool) *structs.Peer {
 
 	peer := structs.Peer{
 		Ip:     address,
@@ -115,7 +132,12 @@ func addPeer(c *websocket.Conn, address string) *structs.Peer {
 
     data := map[string]any{
         "name": Name,
-        "pos": *Player, 
+        "pos": *Player,
+    }
+
+    // Let new peer decide seed
+    if seeded {
+        data["seed"] = M.Seed
     }
 
 	Tell(&peer, data, constants.Hello)
@@ -142,12 +164,26 @@ func listen(program *tea.Program, peer *structs.Peer) {
 			hello(program, peer, pkt.Data)
         case constants.Leave:
 			leave(peer)
-		case constants.Others:
-			others(program, pkt.Data)
+		case constants.Welcome:
+			welcome(program, pkt.Data)
         case constants.Move:
             move(program, peer, pkt.Data)
+        case constants.Flag:
+            Action(program, pkt.Data, false)
+        case constants.Dig:
+            Action(program, pkt.Data, true)
 		}
 	}
+}
+
+func Action(program *tea.Program, data interface{}, dig bool){
+
+    action := structs.Action{
+        Pos: structs.Coords{}.FromData(data),
+        Dig: dig,
+    }
+
+    program.Send(action) 
 }
 
 func move(program *tea.Program, peer *structs.Peer, data interface{}) {
@@ -164,7 +200,16 @@ func leave(peer *structs.Peer) {
 	delete(Peers, peer.Ip)
 }
 
-func others(program *tea.Program, ips interface{}) {
+func welcome(program *tea.Program, data interface{}) {
+    d := data.(map[string]interface{})
+
+    ips := d["others"]
+    f := d["field"]
+
+    field := mines.Field{}
+    mapstructure.Decode(f, &field)
+
+    program.Send(field)
 
 	for _, ip := range ips.([]interface{}) {
         addr := fmt.Sprintf("%v", ip)
@@ -179,6 +224,16 @@ func hello(program *tea.Program, peer *structs.Peer, data interface{}) {
     peer.Name = d["name"].(string)
 
     c := structs.Coords{}.FromData(d["pos"])
+
+    seed, hasSeed := d["seed"]
+    if hasSeed {
+        s, err := strconv.Atoi(seed.(string))
+        if err != nil {
+            // Uh-oh
+        }
+        M.Status = seed.(string)
+        *M.Rng = *rand.New(rand.NewSource(int64(s)))
+    }
 
     program.Send(structs.Movement{
                         Id: peer.Ip, 
