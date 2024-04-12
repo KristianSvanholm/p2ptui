@@ -9,13 +9,13 @@ import (
 	"p2p/src/structs"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gorilla/websocket"
-	"github.com/mitchellh/mapstructure"
 )
 
 var Peers = make(map[string]*structs.Peer)
 var Name string
 var Host bool = false
 var Port string
+var Player *structs.Coords = structs.Coords{}.New()
 
 var wsUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -104,7 +104,6 @@ func addPeer(c *websocket.Conn, address string) *structs.Peer {
 	peer := structs.Peer{
 		Ip:     address,
 		Name:   "not_disclosed",
-        Pos:    structs.Coords{}.New(),
 		Socket: c,
 	}
 
@@ -114,7 +113,12 @@ func addPeer(c *websocket.Conn, address string) *structs.Peer {
 		return nil
 	}
 
-	Tell(&peer, Name, constants.Hello)
+    data := map[string]any{
+        "name": Name,
+        "pos": *Player, 
+    }
+
+	Tell(&peer, data, constants.Hello)
 
 	Peers[address] = &peer
 
@@ -134,29 +138,21 @@ func listen(program *tea.Program, peer *structs.Peer) {
 		switch pkt.Channel {
 		case constants.Chat:
 			chat(program, peer, pkt.Data.(string))
-			break
 		case constants.Hello:
-			hello(peer, pkt.Data.(string))
-			break
+			hello(program, peer, pkt.Data)
         case constants.Leave:
 			leave(peer)
 		case constants.Others:
 			others(program, pkt.Data)
         case constants.Move:
             move(program, peer, pkt.Data)
-			break
 		}
 	}
 }
 
 func move(program *tea.Program, peer *structs.Peer, data interface{}) {
-    var c structs.Coords
-    
-    d := data.(map[string]interface{})
-    c.X = int(d["x"].(float64))
-    c.Y = int(d["y"].(float64))
+    c := structs.Coords{}.FromData(data)
 
-    //fmt.Println(data, c)
     move := structs.Movement{Id: peer.Ip, Pos: c}
     program.Send(move)
 }
@@ -168,18 +164,28 @@ func leave(peer *structs.Peer) {
 	delete(Peers, peer.Ip)
 }
 
-func others(program *tea.Program, data any) {
-    var ips []string
-    mapstructure.Decode(data, ips)
+func others(program *tea.Program, ips interface{}) {
 
-	for _, addr := range ips {
+	for _, ip := range ips.([]interface{}) {
+        addr := fmt.Sprintf("%v", ip)
 		url := url.URL{Scheme: "ws", Host: addr, Path: "/api/connect/"}
 		Connect(program, url)
 	}
 }
 
-func hello(peer *structs.Peer, name string) {
-    peer.Name = name
+func hello(program *tea.Program, peer *structs.Peer, data interface{}) {
+    d := data.(map[string]interface{})
+
+    peer.Name = d["name"].(string)
+
+    c := structs.Coords{}.FromData(d["pos"])
+
+    fmt.Println(d, c)
+
+    program.Send(structs.Movement{
+                        Id: peer.Ip, 
+                        Pos: c,
+                })
 }
 
 func chat(program *tea.Program, peer *structs.Peer, msg string) {

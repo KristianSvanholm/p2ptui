@@ -26,7 +26,6 @@ type Peer struct {
 	mutex  sync.Mutex
 	Name   string
 	Ip     string
-	Pos    Coords
 }
 
 func (p *Peer) Send(pkt interface{}) error {
@@ -45,11 +44,19 @@ type Coords struct {
 	Y int `json:"y"`
 }
 
-func (c Coords) New() Coords {
-    return Coords{X:0, Y:0} 
+func (c Coords) New() *Coords {
+    return &Coords{X:0, Y:0} 
 }
 
-func (c *Coords) Normalize() Coords {
+func (c Coords) FromData(data interface{}) Coords {
+    d := data.(map[string]interface{})
+    c.X = int(d["x"].(float64))
+    c.Y = int(d["y"].(float64))
+
+    return c
+}
+
+func (c *Coords) Normalize() *Coords {
 	if c.X < 0 {
 		c.X = constants.Size - 1
 	} else if c.X > constants.Size-1 {
@@ -62,5 +69,5 @@ func (c *Coords) Normalize() Coords {
 		c.Y = 0
 	}
 
-	return *c
+	return c
 }

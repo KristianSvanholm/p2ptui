@@ -60,7 +60,7 @@ func main() {
 type Model struct {
 	title    string
 	board    [][]string
-	player   structs.Coords
+	player   *structs.Coords
     peers    map[string]structs.Coords
 	chat     []string
 	gameport viewport.Model
@@ -78,15 +78,15 @@ func NewModel() Model {
 
 	chat := make([]string, 0)
 
-	vp := viewport.New(33, 23)
+	vp := viewport.New(50, 23)
 	vp.SetContent(newTable(board).Render())
 
-	cp := viewport.New(33, 10)
+	cp := viewport.New(50, 10)
 	cp.SetContent("Welcome!")
 
 	return Model{
 		title:    "hello world",
-        player:   structs.Coords{}.New(),
+        player:   Player,
         peers:    make(map[string]structs.Coords),
 		textarea: ta,
 		gameport: vp,
@@ -137,7 +137,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.textarea, taCmd = m.textarea.Update(msg)
 	m.gameport, gpCmd = m.gameport.Update(msg)
 
-	var c = m.player
+	var c = *m.player
     old_c := c
 
     board := generateBoard()
@@ -162,13 +162,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     		case tea.KeyDown:
     			c.Y++
 		}
-    case structs.Movement: m.peers[msg.Id] = msg.Pos; m.chat = append(m.chat, fmt.Sprintf("%s", msg.Id))
+    case structs.Movement: m.peers[msg.Id] = msg.Pos
     case structs.Chat: 
         m.chat = append(m.chat, msg.Txt)
         m.chatport.GotoBottom()
 	}
 
-	m.player = c.Normalize()
+	*m.player = *c.Normalize()
     board = peerMovements(m, board)
 
     if old_c != c {
