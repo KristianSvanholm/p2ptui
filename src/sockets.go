@@ -180,8 +180,6 @@ func hello(program *tea.Program, peer *structs.Peer, data interface{}) {
 
     c := structs.Coords{}.FromData(d["pos"])
 
-    fmt.Println(d, c)
-
     program.Send(structs.Movement{
                         Id: peer.Ip, 
                         Pos: c,

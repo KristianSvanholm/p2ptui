@@ -74,12 +74,9 @@ func NewModel() Model {
 	ta.Focus()
 	ta.SetHeight(10)
 
-	board := generateBoard()
-
 	chat := make([]string, 0)
 
 	vp := viewport.New(50, 23)
-	vp.SetContent(newTable(board).Render())
 
 	cp := viewport.New(50, 10)
 	cp.SetContent("Welcome!")
@@ -95,15 +92,35 @@ func NewModel() Model {
 	}
 }
 
-func newTable(board [][]string) *table.Table {
+func newTable(board [][]string, m *Model) *table.Table {
 	return table.New().
 		Border(lipgloss.NormalBorder()).
+        //BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("99"))).
 		BorderRow(true).
 		BorderColumn(true).
 		Rows(board...).
-		StyleFunc(func(row, col int) lipgloss.Style {
+        StyleFunc(func(row, col int) lipgloss.Style {
+    
+            c := structs.Coords{X: col, Y: row-1}
+
+            //fmt.Println(c, *m.player)
+
+            if *m.player == c {
+                //fmt.Println(c)
+                return lipgloss.NewStyle().Padding(0,1).Bold(true).Foreground(lipgloss.ANSIColor(9))
+            }
+
+            for _, p := range m.peers {
+                if p == c {
+                    return lipgloss.NewStyle().Padding(0,1).Bold(true).Foreground(lipgloss.ANSIColor(11))
+                }
+            }
+            
+            return lipgloss.NewStyle().Padding(0,1)
+        })
+		/*StyleFunc(func(row, col int) lipgloss.Style {
 			return lipgloss.NewStyle().Padding(0, 1)
-		})
+		})*/
 }
 
 func generateBoard() [][]string {
@@ -114,7 +131,7 @@ func generateBoard() [][]string {
 		row := make([]string, size)
 
 		for j := 0; j < size; j++ {
-			row[j] = ""
+			row[j] = "O"
 		}
 
 		board[i] = row
@@ -139,8 +156,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var c = *m.player
     old_c := c
-
-    board := generateBoard()
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -169,26 +184,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	*m.player = *c.Normalize()
-    board = peerMovements(m, board)
+
+    board := generateBoard()
 
     if old_c != c {
         Broadcast(c, constants.Move)
     }
 
-	board[c.Y][c.X] = "!"
-
-	m.gameport.SetContent(newTable(board).Render())
+	m.gameport.SetContent(newTable(board, &m).Render())
 
 	m.chatport.SetContent(strings.Join(m.chat, "\n"))
 
 	return m, tea.Batch(taCmd, gpCmd, cpCmd)
-}
-
-func peerMovements(m Model, board [][]string) [][]string {
-    for _, c := range m.peers {
-        board[c.Y][c.X] = "?"
-    }
-    return board
 }
 
 func (m Model) View() string {
