@@ -20,9 +20,7 @@ import (
 
 func main() {
 
-    m := NewModel()
-
-	program := tea.NewProgram(m)
+	program := tea.NewProgram(NewModel())
 
 	http.HandleFunc("/api/connect/", func (w http.ResponseWriter, r *http.Request) {
         ConnectionHandler(w, r, program)
@@ -69,7 +67,7 @@ type Model struct {
 	textarea textarea.Model
 }
 
-func NewModel() Model {
+func NewModel() *Model {
 	ta := textarea.New()
 	ta.Placeholder = "Enter search term"
 	ta.Focus()
@@ -82,7 +80,7 @@ func NewModel() Model {
 	cp := viewport.New(50, 10)
 	cp.SetContent("Welcome!")
 
-	return Model{
+	return &Model{
 		status:    "hello world",
         player:   Player,
         peers:    make(map[string]structs.Coords),
@@ -137,11 +135,11 @@ func generateBoard() [][]string {
 	return board
 }
 
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return textarea.Blink
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		taCmd tea.Cmd
 		gpCmd tea.Cmd
@@ -189,13 +187,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     }
 
     // Update tui contents
-	m.gameport.SetContent(newTable(board, &m).Render())
+	m.gameport.SetContent(newTable(board, m).Render())
 	m.chatport.SetContent(strings.Join(m.chat, "\n"))
 
 	return m, tea.Batch(taCmd, gpCmd, cpCmd)
 }
 
-func (m Model) View() string {
+func (m *Model) View() string {
 	return fmt.Sprintf("%s\n%s\n%s\n%s",
         m.status,
 		m.gameport.View(),
