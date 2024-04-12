@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"p2p/src/constants"
+	"p2p/src/mines"
 	"p2p/src/structs"
 
 	//"log"
@@ -58,11 +59,11 @@ func main() {
 }
 
 type Model struct {
-	title    string
-	board    [][]string
+	status    string
 	player   *structs.Coords
     peers    map[string]structs.Coords
 	chat     []string
+    field    mines.Field
 	gameport viewport.Model
 	chatport viewport.Model
 	textarea textarea.Model
@@ -82,9 +83,10 @@ func NewModel() Model {
 	cp.SetContent("Welcome!")
 
 	return Model{
-		title:    "hello world",
+		status:    "hello world",
         player:   Player,
         peers:    make(map[string]structs.Coords),
+        field:    mines.InitField(constants.Size),
 		textarea: ta,
 		gameport: vp,
 		chatport: cp,
@@ -95,32 +97,27 @@ func NewModel() Model {
 func newTable(board [][]string, m *Model) *table.Table {
 	return table.New().
 		Border(lipgloss.NormalBorder()).
-        //BorderStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("99"))).
 		BorderRow(true).
 		BorderColumn(true).
 		Rows(board...).
         StyleFunc(func(row, col int) lipgloss.Style {
     
             c := structs.Coords{X: col, Y: row-1}
-
-            //fmt.Println(c, *m.player)
-
+            
+            // Player cursor
             if *m.player == c {
-                //fmt.Println(c)
-                return lipgloss.NewStyle().Padding(0,1).Bold(true).Foreground(lipgloss.ANSIColor(9))
+                return lipgloss.NewStyle().Padding(0,1).Bold(true).Foreground(lipgloss.ANSIColor(160))
             }
 
+            // Peer cursors
             for _, p := range m.peers {
                 if p == c {
-                    return lipgloss.NewStyle().Padding(0,1).Bold(true).Foreground(lipgloss.ANSIColor(11))
+                    return lipgloss.NewStyle().Padding(0,1).Bold(true).Foreground(lipgloss.ANSIColor(199))
                 }
             }
             
             return lipgloss.NewStyle().Padding(0,1)
         })
-		/*StyleFunc(func(row, col int) lipgloss.Style {
-			return lipgloss.NewStyle().Padding(0, 1)
-		})*/
 }
 
 func generateBoard() [][]string {
@@ -187,19 +184,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
     board := generateBoard()
 
-    if old_c != c {
+    if old_c != c { // Broadcast move if not same position
         Broadcast(c, constants.Move)
     }
 
+    // Update tui contents
 	m.gameport.SetContent(newTable(board, &m).Render())
-
 	m.chatport.SetContent(strings.Join(m.chat, "\n"))
 
 	return m, tea.Batch(taCmd, gpCmd, cpCmd)
 }
 
 func (m Model) View() string {
-	return fmt.Sprintf("%s\n%s\n%s",
+	return fmt.Sprintf("%s\n%s\n%s\n%s",
+        m.status,
 		m.gameport.View(),
 		m.chatport.View(),
 		m.textarea.View())

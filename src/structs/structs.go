@@ -35,8 +35,8 @@ func (p *Peer) Send(pkt interface{}) error {
 }
 
 type Packet struct {
-	Channel constants.WsEvent       `json:"channel"`
-	Data    interface{}  `json:"data"`
+	Channel constants.WsEvent   `json:"channel"`
+	Data    interface{}         `json:"data"`
 }
 
 type Coords struct {
@@ -71,3 +71,12 @@ func (c *Coords) Normalize() *Coords {
 
 	return c
 }
+
+type Cell struct {
+	Revealed  bool `json:"revealed"`
+	TrueCount int  `json:"-"`
+	Mine      bool `json:"-"`
+	Flagged   bool `json:"flagged"`
+	Count     int  `json:"count"`
+}
+
