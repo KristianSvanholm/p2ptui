@@ -2,7 +2,9 @@ package constants
 
 import("github.com/charmbracelet/lipgloss")
 
-const Size = 10
+const Density = 10 // Percent chance for a mine to be planted at cell.
+
+const Size = 10 // Changing this will likely break UI. Viewport sizes are hardcoded to fit size 10
 
 var PlayerStyle lipgloss.Style = lipgloss.NewStyle().
                                     Bold(true).

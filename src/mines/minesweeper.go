@@ -143,7 +143,7 @@ func (f * Field) PlantMines(c *structs.Coords, rng *rand.Rand) {
 				continue
 			}
     
-			if rng.Intn(10) == 1 {
+			if rng.Intn(100) <= constants.Density {
 				f.Field[x][y].Mine = true
 				f.TotalMines++
 			}
