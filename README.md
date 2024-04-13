@@ -6,7 +6,8 @@ Uses the [BubbleTea](https://github.com/charmbracelet/bubbletea) framework for t
 Player cursor position is indicated by a color styling on the specific cell location. If no contents in cell, player cursor will be invisible.  
 Could potentially be improved by coloring the actual grid around the specific cell, which would allow for colored flags and numbers as well.  
 
-![image](https://github.com/KristianSvanholm/p2ptui/assets/61845965/27a61a4c-2b47-4bac-aca9-5e9d7707949d)  
+![image](https://github.com/KristianSvanholm/p2ptui/assets/61845965/23710705-9d40-46b9-9bf8-7686ad3c0827)
+
 
 ## Networking
 * All peers are connected to all peers.  
