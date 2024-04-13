@@ -93,7 +93,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
                 if m.Field.SetFlag(msg.Pos) {
                     m.status = "Win!"
                 }
-            }	
+            }
         case mines.Field: *m.Field = msg // Peer shares current MineField
         case structs.StatusUpdate: m.status = msg.Update // Headline is update (sys info)
         case rand.Rand: m.Rng = &msg // New peer updates seed

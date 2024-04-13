@@ -37,6 +37,10 @@ func InitField(size int) *Field {
 
 func (f *Field) SetFlag(c structs.Coords) bool {
 
+    if f.FirstMove {
+        return false
+    }
+
     f.mutex.Lock()
     defer f.mutex.Unlock()
 
@@ -62,16 +66,13 @@ func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) constants.DigEvent {
 
     var result constants.DigEvent = constants.Nothing
 
-    f.mutex.Lock()
-    defer f.mutex.Unlock()
-
 	cell := &f.Field[c.X][c.Y]
-	if cell.Revealed {
-		return result
-	}
+
+    if cell.Revealed || cell.Flagged {
+        return f.digAround(c, rng)
+    }
 
 	if f.FirstMove {
-
         f.FirstMove = false
 		f.PlantMines(c, rng)
 		f.CalculateCells()
@@ -90,6 +91,28 @@ func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) constants.DigEvent {
         result = constants.Win
     }
 
+    return result
+}
+
+func (f *Field) digAround(c *structs.Coords, rng *rand.Rand) constants.DigEvent {
+	mutX := []int{-1, 0, 1}
+	mutY := []int{-1, 0, 1}
+
+    result := constants.Nothing
+
+	for _, mX := range mutX {
+		for _, mY := range mutY {
+			mutC := structs.Coords{X: c.X + mX, Y: c.Y + mY}
+			if !(validCell(&mutC, len(f.Field)) && !f.Field[mutC.X][mutC.Y].Revealed && !f.Field[mutC.X][mutC.Y].Flagged)  {
+                continue
+            }
+
+            currResult := f.Dig(&mutC, rng)
+            if currResult > result { // Nothing < Win < Landmine
+                result = currResult 
+            }
+		}
+	}
     return result
 }
 

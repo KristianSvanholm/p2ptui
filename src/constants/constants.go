@@ -15,8 +15,8 @@ type DigEvent int
 
 const (
     Nothing DigEvent = iota
-    Landmine
     Win
+    Landmine
 )
 
 type WsEvent int
