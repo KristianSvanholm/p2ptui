@@ -44,3 +44,36 @@ type Cell struct {
 	Count     int  `json:"count"`
 }
 
+type Join struct {
+    Id string
+    Pos Coords
+    Name string
+}
+
+type StatusUpdate struct {
+    Update string
+}
+
+type Movement struct {
+	Id  string
+	Pos Coords
+}
+
+type Action struct {
+    Pos Coords
+    Dig bool
+    Id string
+}
+
+type Chat struct {
+    Id string
+	Txt string
+}
+
+type join struct {
+	Id string
+}
+
+type Leave struct {
+    Id string
+}

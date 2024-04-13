@@ -43,17 +43,17 @@ func NewModel(field *mines.Field, rng rand.Rand, seed *string) *Model {
 	cp.SetContent("Welcome!")
 
 	return &Model{
-		status:    "hello world",
+		status:    "Hello world",
         player:   network.Player,
         peers:    make(map[string]*UIPeer),
-        Rng:      &rng,
+		chat:     chat,
         Seed:     seed,
+        Rng:      &rng,
         Field:    field,
 		textarea: ta,
 		gameport: vp,
         peerport: pp,
 		chatport: cp,
-		chat:     chat,
 	}
 }
 
@@ -79,20 +79,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
     old_c := c
 
 	switch msg := msg.(type) {
-        case network.Movement: m.peers[msg.Id].move(msg.Pos) // Peer movement
-        case network.Join: m.peers[msg.Id] = createUIPeer(msg) // Peer joining
-        case network.Leave: delete(m.peers, msg.Id) // Peer leaving
-        case network.Chat: // Peer Chatting 
-            m.chat = append(m.chat, msg.Txt)
+        case structs.Movement: m.peers[msg.Id].move(msg.Pos) // Peer movement
+        case structs.Join: m.peers[msg.Id] = createUIPeer(msg) // Peer joining
+        case structs.Leave: delete(m.peers, msg.Id) // Peer leaving
+        case structs.Chat: // Peer Chatting 
+            p := m.peers[msg.Id]
+            m.chat = append(m.chat, chatter(p.name, msg.Txt, p.style))
             m.chatport.GotoBottom()
-        case network.Action: // Peer plays
+        case structs.Action: // Peer plays
             if msg.Dig {
-                m.Field.Dig(&msg.Pos, m.Rng)
+                handleDigEvent(m, m.Field.Dig(&msg.Pos, m.Rng), m.peers[msg.Id].name)
             } else {
-                m.Field.SetFlag(msg.Pos)
+                if m.Field.SetFlag(msg.Pos) {
+                    m.status = "Win!"
+                }
             }	
         case mines.Field: *m.Field = msg // Peer shares current MineField
-        case network.StatusUpdate: m.status = msg.Update // Headline is update (sys info)
+        case structs.StatusUpdate: m.status = msg.Update // Headline is update (sys info)
         case rand.Rand: m.Rng = &msg // New peer updates seed
     	case tea.KeyMsg: // Local user key inputs
 
@@ -104,18 +107,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         		case tea.KeyUp:     c.Y--
         		case tea.KeyDown:   c.Y++
                 case tea.KeyShiftUp: // Plant flag "Flagpole is up"
-                    m.Field.SetFlag(*m.player)
+                    if m.Field.SetFlag(*m.player) {
+                        m.status = "Win!"
+                    }
                     network.Broadcast(*m.player, constants.Flag)
 
                 case tea.KeyShiftDown: // Dig ground "Shovel is down"
-                    m.Field.Dig(m.player, m.Rng)
+                    handleDigEvent(m, m.Field.Dig(m.player, m.Rng), "You")
                     network.Broadcast(*m.player, constants.Dig)
 
     		    case tea.KeyEnter: // Send message
         			v := m.textarea.Value() // Get value of input
                     if len(v) != 0 {
         			    network.Broadcast(v, constants.Chat)
-            			m.chat = append(m.chat, "you: "+v)
+                        m.chat = append(m.chat, chatter("You", v, constants.PlayerStyle))
             			m.textarea.Reset()
             			m.chatport.GotoBottom()
                     }
@@ -138,7 +143,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
     // Update TUI contents
 	m.gameport.SetContent(newTable(board, m).Render())
-	m.chatport.SetContent(strings.Join(m.chat, "\n"))
+    m.chatport.SetContent(strings.Join(m.chat,"")) // No clue why a newline is not required here :P
     m.peerport.SetContent(peerList(m.peers))
 
 	return m, tea.Batch(taCmd, gpCmd, cpCmd, ppCmd)

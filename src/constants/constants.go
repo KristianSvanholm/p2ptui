@@ -9,6 +9,14 @@ var PlayerStyle lipgloss.Style = lipgloss.NewStyle().
                                     Padding(0,1).
                                     Foreground(lipgloss.ANSIColor(160))
 
+type DigEvent int 
+
+const (
+    Nothing DigEvent = iota
+    Landmine
+    Win
+)
+
 type WsEvent int
 
 const (

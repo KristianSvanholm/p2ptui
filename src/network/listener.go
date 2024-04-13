@@ -34,17 +34,16 @@ func listen(program *tea.Program, peer *Peer, name string, seed *string) {
         case constants.Move:
             move(program, peer, pkt.Data)
         case constants.Flag:
-            Act(program, pkt.Data, false)
+            Act(program, peer, pkt.Data, false)
         case constants.Dig:
-            Act(program, pkt.Data, true)
+            Act(program, peer, pkt.Data, true)
 		}
 	}
 }
 
 // Peer sends the network a chat message
 func chat(program *tea.Program, peer *Peer, msg string) {
-	output := fmt.Sprintf("%s - %s", peer.Name, msg)
-    program.Send(Chat{Txt: output})
+    program.Send(structs.Chat{Id: peer.Ip, Txt: msg})
 }
 
 // Peer introduces themselves to you 
@@ -58,7 +57,7 @@ func hello(program *tea.Program, peer *Peer, data interface{}) {
 
     seed, hasSeed := d["seed"]
     if hasSeed {
-        program.Send(StatusUpdate{seed.(string)})
+        program.Send(structs.StatusUpdate{fmt.Sprintf("New seed: %s", seed.(string))})
         s, err := strconv.Atoi(seed.(string))
         if err != nil {
             // Uh-oh
@@ -66,7 +65,7 @@ func hello(program *tea.Program, peer *Peer, data interface{}) {
         program.Send(*rand.New(rand.NewSource(int64(s))))
     }
 
-    program.Send(Join{
+    program.Send(structs.Join{
                     Id: peer.Ip, 
                     Pos: c,
                     Name: peer.Name,
@@ -75,11 +74,13 @@ func hello(program *tea.Program, peer *Peer, data interface{}) {
 
 // Peer has told you they are leaving.
 func leave(program *tea.Program, peer *Peer) {
+    program.Send(structs.StatusUpdate{fmt.Sprintf("%s left the game",peer.Name)})
+
 	peer.Socket.Close()
 	delete(Peers, peer.Ip) // Remove from network peer map
 
     // Notify to UI
-    program.Send(Leave{peer.Ip})
+    program.Send(structs.Leave{peer.Ip})
 }
 
 // Peer Catches you up to speed
@@ -104,16 +105,17 @@ func welcome(program *tea.Program, data interface{}, name string, seed *string) 
 func move(program *tea.Program, peer *Peer, data interface{}) {
     c := structs.Coords{}.FromData(data)
 
-    move := Movement{Id: peer.Ip, Pos: c}
+    move := structs.Movement{Id: peer.Ip, Pos: c}
     program.Send(move)
 }
 
 // Peer makes a move on the field (dig / flag)
-func Act(program *tea.Program, data interface{}, dig bool){
+func Act(program *tea.Program, peer *Peer, data interface{}, dig bool){
 
-    action := Action{
+    action := structs.Action{
         Pos: structs.Coords{}.FromData(data),
         Dig: dig,
+        Id: peer.Ip,
     }
 
     program.Send(action) 

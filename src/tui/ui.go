@@ -1,9 +1,9 @@
 package tui
 
 import (
+	"fmt"
 	"p2p/src/constants"
 	"p2p/src/mines"
-	"p2p/src/network"
 	"p2p/src/structs"
 	"sort"
 	"strconv"
@@ -16,6 +16,7 @@ import (
 type UIPeer struct {
     style lipgloss.Style
     name  string
+    id string
     pos   structs.Coords
 }
 
@@ -49,6 +50,18 @@ func newTable(board [][]string, m *Model) *table.Table {
         })
 }
 
+func handleDigEvent(m *Model, event constants.DigEvent, name string) {
+    switch event {
+        case constants.Nothing:
+        case constants.Landmine: m.status = fmt.Sprintf("%s found a landmine", name)
+        case constants.Win: m.status = "Win!"
+    }
+}
+
+func chatter(name string, text string, style lipgloss.Style) string {
+    return fmt.Sprintf("%s: %s", style.Render(name), text)    
+}
+
 func generateBoard(f *mines.Field) [][]string {
     size := constants.Size
 
@@ -79,14 +92,20 @@ func generateBoard(f *mines.Field) [][]string {
 	return board
 }
 
-func createUIPeer(peer network.Join) *UIPeer{
+var colorIndex int
+
+func createUIPeer(peer structs.Join) *UIPeer{
+    colors := []int{199, 33, 46, 202, 14,}
+    colorIndex++
+
     return &UIPeer{
         pos: peer.Pos,
         style: lipgloss.NewStyle().
                         Bold(true).
                         Padding(0,1).
-                        Foreground(lipgloss.ANSIColor(199)),
+                        Foreground(lipgloss.ANSIColor(colors[colorIndex%len(colors)])),
         name: peer.Name,
+        id: peer.Id,
     }
 }
 
@@ -104,7 +123,7 @@ func peerList(peers map[string]*UIPeer) string {
 
     // ... Which we can then sort ...
     sort.Slice(arr, func(i2, j int) bool {
-        return arr[i2].name > arr[j].name
+        return arr[i2].id > arr[j].id
     })
 
     var sb strings.Builder

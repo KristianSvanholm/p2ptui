@@ -35,14 +35,15 @@ func InitField(size int) *Field {
     return &f
 }
 
-func (f *Field) SetFlag(c structs.Coords) {
+func (f *Field) SetFlag(c structs.Coords) bool {
 
     f.mutex.Lock()
+    defer f.mutex.Unlock()
 
 	cell := &f.Field[c.X][c.Y]
 
 	if cell.Revealed {
-		return
+		return false
 	}
 
 	cell.Flagged = !cell.Flagged
@@ -54,19 +55,19 @@ func (f *Field) SetFlag(c structs.Coords) {
 		f.TotalFlags--
 	}
 
-	go f.checkWin()
-
-    defer f.mutex.Unlock()
+	return f.checkWin()
 }
 
-func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) {
+func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) constants.DigEvent {
+
+    var result constants.DigEvent = constants.Nothing
 
     f.mutex.Lock()
     defer f.mutex.Unlock()
 
 	cell := &f.Field[c.X][c.Y]
 	if cell.Revealed {
-		return
+		return result
 	}
 
 	if f.FirstMove {
@@ -79,25 +80,29 @@ func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) {
 
 		if cell.Mine {
 			go f.explode()
+            result = constants.Landmine
 		} else {
 			f.flip(c)
 		}
 	}
 
-    go f.checkWin()
+    if f.checkWin() {
+        result = constants.Win
+    }
 
+    return result
 }
 
-func (f *Field) checkWin() {
+func (f *Field) checkWin() bool {
 	if (f.TotalCells == f.TotalRevealed+f.TotalMines) && f.TotalMines == f.TotalFlags {
-		//SystemMessage("Win!")
-		*f = *InitField(constants.Size)
+        go func(){*f = *InitField(constants.Size)}() // This needs to happen concurrently
+        return true
 	}
+    return false
 }
 
 func (f *Field) explode() {
-	//SystemMessage(fmt.Sprintf("Loss! - %s fucked up", name))
-	*f = *InitField(constants.Size)
+    *f = *InitField(constants.Size)
 }
 
 func (f *Field) flip(c *structs.Coords) {

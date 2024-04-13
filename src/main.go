@@ -17,7 +17,6 @@ import (
 func main() {
 
     rng, seed := rng()
-    fmt.Println(seed)
     field := mines.InitField(constants.Size)
 	program := tea.NewProgram(tui.NewModel(field, rng, &seed))
     // Config thingy
