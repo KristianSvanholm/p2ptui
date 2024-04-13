@@ -31,7 +31,7 @@ type Model struct {
 
 func NewModel(field *mines.Field, rng rand.Rand, seed *string) *Model {
 	ta := textarea.New()
-	ta.Placeholder = "Enter search term"
+	ta.Placeholder = "Write you message..."
 	ta.Focus()
 	ta.SetHeight(2)
 
