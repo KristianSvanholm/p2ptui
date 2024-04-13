@@ -54,8 +54,7 @@ func (f *Field) SetFlag(c structs.Coords) {
 		f.TotalFlags--
 	}
 
-	f.checkWin()
-	//sendChanges()
+	go f.checkWin()
 
     defer f.mutex.Unlock()
 }
@@ -86,7 +85,6 @@ func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) {
 	}
 
     go f.checkWin()
-	//sendChanges()
 
 }
 
