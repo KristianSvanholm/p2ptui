@@ -18,8 +18,8 @@ Uses the [BubbleTea](https://github.com/charmbracelet/bubbletea) framework for t
 `go run src/main.go`
 
 ## Controls
-* SHIFT+UP - Plant flag
-* SHIFT+DOWN - Dig cell
-* Arrow keys - Move cursor around
-* ENTER - Send chat message
-* CTRL+C / ESC - Exit game
+* `SHIFT+UP` - Plant flag
+* `SHIFT+DOWN` - Dig cell
+* `Arrow keys` - Move cursor around
+* `ENTER` - Send chat message
+* `CTRL+C` / `ESC` - Exit game
