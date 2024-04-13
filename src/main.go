@@ -18,7 +18,7 @@ func main() {
 
     rng, seed := rng()
     field := mines.InitField(constants.Size)
-	program := tea.NewProgram(tui.NewModel(field, rng, &seed))
+	program := tea.NewProgram(tui.NewModel(field, rng, &seed), tea.WithAltScreen())
     // Config thingy
 	var hostq, name string
 	fmt.Print("Port: ")
