@@ -20,7 +20,6 @@ func main() {
     fmt.Println(seed)
     field := mines.InitField(constants.Size)
 	program := tea.NewProgram(tui.NewModel(field, rng, &seed))
-
     // Config thingy
 	var hostq, name string
 	fmt.Print("Port: ")

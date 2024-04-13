@@ -37,7 +37,7 @@ func ConnectionHandler(w http.ResponseWriter, r *http.Request, program *tea.Prog
 		return
 	}
 
-    sendWelcome(p, ips,field)
+    sendWelcome(p, ips, field)
 
 	go listen(program, p, name, seed)
 }

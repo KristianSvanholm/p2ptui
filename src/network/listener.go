@@ -18,8 +18,7 @@ func listen(program *tea.Program, peer *Peer, name string, seed *string) {
 		pkt := Packet{}
 		err := peer.Socket.ReadJSON(&pkt)
 		if err != nil {
-            program.Send(Leave{peer.Ip})
-			peer.Socket.Close()
+            leave(program, peer)
 			return
 		}
 

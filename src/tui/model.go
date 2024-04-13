@@ -81,6 +81,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
         case network.Movement: m.peers[msg.Id].move(msg.Pos) // Peer movement
         case network.Join: m.peers[msg.Id] = createUIPeer(msg) // Peer joining
+        case network.Leave: delete(m.peers, msg.Id) // Peer leaving
         case network.Chat: // Peer Chatting 
             m.chat = append(m.chat, msg.Txt)
             m.chatport.GotoBottom()
@@ -90,7 +91,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
             } else {
                 m.Field.SetFlag(msg.Pos)
             }	
-        case mines.Field: m.Field = &msg // Peer shares current MineField
+        case mines.Field: *m.Field = msg // Peer shares current MineField
         case network.StatusUpdate: m.status = msg.Update // Headline is update (sys info)
         case rand.Rand: m.Rng = &msg // New peer updates seed
     	case tea.KeyMsg: // Local user key inputs
