@@ -2,7 +2,7 @@ package constants
 
 import("github.com/charmbracelet/lipgloss")
 
-const Density = 10 // Percent chance for a mine to be planted at cell.
+const Density = 25 // Percent chance for a mine to be planted at cell.
 
 const Size = 10 // Changing this will likely break UI. Viewport sizes are hardcoded to fit size 10
 
