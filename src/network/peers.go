@@ -36,14 +36,14 @@ func addPeer(c *websocket.Conn, address string, name string, seed *string) *Peer
 		return nil
 	}
 
-    data := map[string]any{
-        "name": name,
-        "pos": *Player,
-    }
+	data := map[string]any{
+		"name": name,
+		"pos":  *Player,
+	}
 
-    if seed != nil {
-        data["seed"] = *seed
-    }
+	if seed != nil {
+		data["seed"] = *seed
+	}
 
 	Tell(&peer, data, constants.Hello)
 

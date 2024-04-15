@@ -8,41 +8,41 @@ import (
 )
 
 type Field struct {
-    FirstMove bool `json:"firstMove"`
-    TotalMines int `json:"totalMines"`
-    TotalFlags int `json:"totalFlags"`
-    TotalRevealed int `json:"totalRevealed"`
-    TotalCells int `json:"totalCells"`
-    mutex sync.Mutex `json:"-"`
-    Field [][]structs.Cell `json:"field"`
+	FirstMove     bool             `json:"firstMove"`
+	TotalMines    int              `json:"totalMines"`
+	TotalFlags    int              `json:"totalFlags"`
+	TotalRevealed int              `json:"totalRevealed"`
+	TotalCells    int              `json:"totalCells"`
+	mutex         sync.Mutex       `json:"-"`
+	Field         [][]structs.Cell `json:"field"`
 }
 
 func InitField(size int) *Field {
 
-    f := Field{
-        FirstMove: true,
-        TotalMines: 0,
-        TotalFlags: 0,
-        TotalRevealed: 0,
-        TotalCells: size*size,
-        Field: make([][]structs.Cell, size),
-    }
+	f := Field{
+		FirstMove:     true,
+		TotalMines:    0,
+		TotalFlags:    0,
+		TotalRevealed: 0,
+		TotalCells:    size * size,
+		Field:         make([][]structs.Cell, size),
+	}
 
 	for i := range f.Field {
 		f.Field[i] = make([]structs.Cell, size)
 	}
 
-    return &f
+	return &f
 }
 
 func (f *Field) SetFlag(c structs.Coords) bool {
 
-    if f.FirstMove {
-        return false
-    }
+	if f.FirstMove {
+		return false
+	}
 
-    f.mutex.Lock()
-    defer f.mutex.Unlock()
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
 
 	cell := &f.Field[c.X][c.Y]
 
@@ -64,16 +64,16 @@ func (f *Field) SetFlag(c structs.Coords) bool {
 
 func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) constants.DigEvent {
 
-    var result constants.DigEvent = constants.Nothing
+	var result constants.DigEvent = constants.Nothing
 
 	cell := &f.Field[c.X][c.Y]
 
-    if cell.Revealed || cell.Flagged {
-        return f.digAround(c, rng)
-    }
+	if cell.Revealed || cell.Flagged {
+		return f.digAround(c, rng)
+	}
 
 	if f.FirstMove {
-        f.FirstMove = false
+		f.FirstMove = false
 		f.PlantMines(c, rng)
 		f.CalculateCells()
 		f.flip(c)
@@ -81,55 +81,55 @@ func (f *Field) Dig(c *structs.Coords, rng *rand.Rand) constants.DigEvent {
 
 		if cell.Mine {
 			go f.explode()
-            result = constants.Landmine
+			result = constants.Landmine
 		} else {
 			f.flip(c)
 		}
 	}
 
-    if f.checkWin() {
-        result = constants.Win
-    }
+	if f.checkWin() {
+		result = constants.Win
+	}
 
-    return result
+	return result
 }
 
 func (f *Field) digAround(c *structs.Coords, rng *rand.Rand) constants.DigEvent {
 	mutX := []int{-1, 0, 1}
 	mutY := []int{-1, 0, 1}
 
-    result := constants.Nothing
+	result := constants.Nothing
 
 	for _, mX := range mutX {
 		for _, mY := range mutY {
 			mutC := structs.Coords{X: c.X + mX, Y: c.Y + mY}
-			if !(validCell(&mutC, len(f.Field)) && !f.Field[mutC.X][mutC.Y].Revealed && !f.Field[mutC.X][mutC.Y].Flagged)  {
-                continue
-            }
+			if !(validCell(&mutC, len(f.Field)) && !f.Field[mutC.X][mutC.Y].Revealed && !f.Field[mutC.X][mutC.Y].Flagged) {
+				continue
+			}
 
-            currResult := f.Dig(&mutC, rng)
-            if currResult > result { // Nothing < Win < Landmine
-                result = currResult 
-            }
+			currResult := f.Dig(&mutC, rng)
+			if currResult > result { // Nothing < Win < Landmine
+				result = currResult
+			}
 		}
 	}
-    return result
+	return result
 }
 
 func (f *Field) checkWin() bool {
 	if (f.TotalCells == f.TotalRevealed+f.TotalMines) && f.TotalMines == f.TotalFlags {
-        go func(){*f = *InitField(constants.Size)}() // This needs to happen concurrently
-        return true
+		go func() { *f = *InitField(constants.Size) }() // This needs to happen concurrently
+		return true
 	}
-    return false
+	return false
 }
 
 func (f *Field) explode() {
-    *f = *InitField(constants.Size)
+	*f = *InitField(constants.Size)
 }
 
 func (f *Field) flip(c *structs.Coords) {
-    
+
 	size := len(f.Field)
 
 	cell := &f.Field[c.X][c.Y]
@@ -158,14 +158,14 @@ func validCell(c *structs.Coords, size int) bool {
 	return !(c.X < 0 || c.Y < 0 || c.X == size || c.Y == size)
 }
 
-func (f * Field) PlantMines(c *structs.Coords, rng *rand.Rand) {
+func (f *Field) PlantMines(c *structs.Coords, rng *rand.Rand) {
 
 	for x, row := range f.Field {
 		for y := range row {
 			if x == c.X && y == c.Y || surroundsCell(c, x, y) {
 				continue
 			}
-    
+
 			if rng.Intn(100) <= constants.Density {
 				f.Field[x][y].Mine = true
 				f.TotalMines++
@@ -174,7 +174,7 @@ func (f * Field) PlantMines(c *structs.Coords, rng *rand.Rand) {
 	}
 }
 
-func (f * Field) CalculateCells() {
+func (f *Field) CalculateCells() {
 
 	for x, row := range f.Field {
 		for y, cell := range row {

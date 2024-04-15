@@ -14,7 +14,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-
 var wsUpgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -33,33 +32,32 @@ func ConnectionHandler(w http.ResponseWriter, r *http.Request, program *tea.Prog
 		return
 	}
 
-    ips := ips() // Get list before adding new peer (!)
+	ips := ips() // Get list before adding new peer (!)
 
-    ip := strings.Split(r.RemoteAddr, ":")[0]
+	ip := strings.Split(r.RemoteAddr, ":")[0]
 
-    p := addPeer(connection, ip+":"+r.Header.Get("Origin"), name, nil)
+	p := addPeer(connection, ip+":"+r.Header.Get("Origin"), name, nil)
 	if p == nil {
 		return
 	}
 
-    sendWelcome(p, ips, field)
-        
-    go program.Send(structs.StatusUpdate{"New peer joined the game!"})
+	sendWelcome(p, ips, field)
+
+	go program.Send(structs.StatusUpdate{"New peer joined the game!"})
 	go listen(program, p, name, seed)
 }
-
 
 // Me connect to someone else
 func Connect(program *tea.Program, url url.URL, name string, seed *string) {
 
 	header := http.Header{}
-    header.Set("Origin", Port)
+	header.Set("Origin", Port)
 	connection, errcode, err := websocket.DefaultDialer.Dial(url.String(), header)
 	if err != nil {
 		log.Fatal("Could not connect to network. Bye.\n", err, errcode)
 	}
 
-    go program.Send(structs.StatusUpdate{fmt.Sprintf("New seed: %s",*seed)})
+	go program.Send(structs.StatusUpdate{fmt.Sprintf("New seed: %s", *seed)})
 	p := addPeer(connection, connection.RemoteAddr().String(), name, seed)
 	if p == nil {
 		return
@@ -67,7 +65,6 @@ func Connect(program *tea.Program, url url.URL, name string, seed *string) {
 
 	go listen(program, p, name, seed)
 }
-
 
 // Gather list of peers' ips
 func ips() []string {
@@ -81,12 +78,11 @@ func ips() []string {
 	return keys
 }
 
-
 func sendWelcome(p *Peer, ips []string, field *mines.Field) {
-    data := map[string]any{
-        "others": ips,
-        "field": *field,
-    }
-    
-    Tell(p, data, constants.Welcome)
+	data := map[string]any{
+		"others": ips,
+		"field":  *field,
+	}
+
+	Tell(p, data, constants.Welcome)
 }

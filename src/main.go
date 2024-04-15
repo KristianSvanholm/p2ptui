@@ -17,25 +17,24 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-
 func main() {
-    var borders bool
-    flag.BoolVar(&borders, "b", false, "Adds borders to minefield")
-    flag.Parse()
+	var borders bool
+	flag.BoolVar(&borders, "b", false, "Adds borders to minefield")
+	flag.Parse()
 
-    // Automatically set port
-    listener, err := net.Listen("tcp", ":0")
-    if err != nil {
-        log.Fatal(err)
-    }
+	// Automatically set port
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    network.Port = fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)
+	network.Port = fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)
 
-    rng, seed := rng()
-    field := mines.InitField(constants.Size)
+	rng, seed := rng()
+	field := mines.InitField(constants.Size)
 	program := tea.NewProgram(tui.NewModel(field, rng, borders, &seed), tea.WithAltScreen())
 
-    // Config thingy
+	// Config thingy
 	var hostq, name string
 	fmt.Print("Name: ")
 	fmt.Scanln(&name)
@@ -48,18 +47,18 @@ func main() {
 		fmt.Print("Host address: ")
 		fmt.Scanln(&ntwrk)
 		url := url.URL{Scheme: "ws", Host: ntwrk, Path: "/api/connect/"}
-       
+
 		network.Connect(program, url, name, &seed)
 	}
 
-    network.Serve(listener, program, name, &seed, field)
+	network.Serve(listener, program, name, &seed, field)
 
-   	program.Run()
+	program.Run()
 
 }
 
 // Sets the seed for future rng
 func rng() (rand.Rand, string) {
-    seed := time.Now().UTC().UnixNano()
-    return *rand.New(rand.NewSource(seed)), fmt.Sprint(seed) 
+	seed := time.Now().UTC().UnixNano()
+	return *rand.New(rand.NewSource(seed)), fmt.Sprint(seed)
 }

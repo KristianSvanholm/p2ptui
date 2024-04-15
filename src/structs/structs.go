@@ -10,15 +10,15 @@ type Coords struct {
 }
 
 func (c Coords) New() *Coords {
-    return &Coords{X:0, Y:0} 
+	return &Coords{X: 0, Y: 0}
 }
 
 func (c Coords) FromData(data interface{}) Coords {
-    d := data.(map[string]interface{})
-    c.X = int(d["x"].(float64))
-    c.Y = int(d["y"].(float64))
+	d := data.(map[string]interface{})
+	c.X = int(d["x"].(float64))
+	c.Y = int(d["y"].(float64))
 
-    return c
+	return c
 }
 
 func (c *Coords) Normalize() *Coords {
@@ -38,20 +38,20 @@ func (c *Coords) Normalize() *Coords {
 }
 
 type Cell struct {
-	Revealed  bool `json:"revealed"`
-	Mine      bool `json:"mine"`
-	Flagged   bool `json:"flagged"`
-	Count     int  `json:"count"`
+	Revealed bool `json:"revealed"`
+	Mine     bool `json:"mine"`
+	Flagged  bool `json:"flagged"`
+	Count    int  `json:"count"`
 }
 
 type Join struct {
-    Id string
-    Pos Coords
-    Name string
+	Id   string
+	Pos  Coords
+	Name string
 }
 
 type StatusUpdate struct {
-    Update string
+	Update string
 }
 
 type Movement struct {
@@ -60,13 +60,13 @@ type Movement struct {
 }
 
 type Action struct {
-    Pos Coords
-    Dig bool
-    Id string
+	Pos Coords
+	Dig bool
+	Id  string
 }
 
 type Chat struct {
-    Id string
+	Id  string
 	Txt string
 }
 
@@ -75,5 +75,5 @@ type join struct {
 }
 
 type Leave struct {
-    Id string
+	Id string
 }

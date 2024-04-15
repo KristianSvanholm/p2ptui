@@ -6,4 +6,3 @@ import (
 
 var Port string
 var Player *structs.Coords = structs.Coords{}.New()
-
