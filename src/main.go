@@ -29,7 +29,6 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println(listener.Addr().String())
     network.Port = fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)
 
     rng, seed := rng()
