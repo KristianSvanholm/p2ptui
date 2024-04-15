@@ -10,15 +10,21 @@ import (
 	"p2p/src/tui"
 	"strings"
 	"time"
+    "flag"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+
 func main() {
+    var borders bool
+    flag.BoolVar(&borders, "b", false, "Adds borders to minefield")
+    flag.Parse()
+
 
     rng, seed := rng()
     field := mines.InitField(constants.Size)
-	program := tea.NewProgram(tui.NewModel(field, rng, &seed), tea.WithAltScreen())
+	program := tea.NewProgram(tui.NewModel(field, rng, borders, &seed), tea.WithAltScreen())
     // Config thingy
 	var hostq, name string
 	fmt.Print("Port: ")
@@ -33,7 +39,7 @@ func main() {
 		var ntwrk string
 		fmt.Print("Host port: ")
 		fmt.Scanln(&ntwrk)
-		url := url.URL{Scheme: "ws", Host: "0.0.0.0:" + ntwrk, Path: "/api/connect/"}
+		url := url.URL{Scheme: "ws", Host: ntwrk, Path: "/api/connect/"}
        
 		network.Connect(program, url, name, &seed)
 	}

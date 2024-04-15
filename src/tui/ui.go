@@ -26,7 +26,7 @@ func (p *UIPeer) move(pos structs.Coords){
 
 func newTable(board [][]string, m *Model) *table.Table {
 	return table.New().
-		Border(lipgloss.NormalBorder()).
+		Border(m.border).
 		BorderRow(true).
 		BorderColumn(true).
 		Rows(board...).

@@ -22,6 +22,7 @@ type Model struct {
     chat     []string
     Seed     *string
     Rng      *rand.Rand
+    border   lipgloss.Border
     Field    *mines.Field
 	gameport viewport.Model
     peerport viewport.Model
@@ -29,7 +30,13 @@ type Model struct {
 	textarea textarea.Model
 }
 
-func NewModel(field *mines.Field, rng rand.Rand, seed *string) *Model {
+func NewModel(field *mines.Field, rng rand.Rand, borders bool, seed *string) *Model {
+    
+    b := lipgloss.HiddenBorder()
+    if borders {
+        b = lipgloss.NormalBorder()
+    }
+
 	ta := textarea.New()
 	ta.Placeholder = "Write your message..."
 	ta.Focus()
@@ -48,6 +55,7 @@ func NewModel(field *mines.Field, rng rand.Rand, seed *string) *Model {
         peers:    make(map[string]*UIPeer),
 		chat:     chat,
         Seed:     seed,
+        border: b,
         Rng:      &rng,
         Field:    field,
 		textarea: ta,
