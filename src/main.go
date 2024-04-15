@@ -45,7 +45,7 @@ func main() {
 
 	if hostq != "y" {
 		var ntwrk string
-		fmt.Print("Host port: ")
+		fmt.Print("Host address: ")
 		fmt.Scanln(&ntwrk)
 		url := url.URL{Scheme: "ws", Host: ntwrk, Path: "/api/connect/"}
        
