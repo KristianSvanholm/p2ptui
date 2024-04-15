@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"p2p/src/constants"
 	"p2p/src/mines"
+	"p2p/src/network"
 	"p2p/src/structs"
 	"sort"
 	"strconv"
@@ -127,12 +128,11 @@ func peerList(peers map[string]*UIPeer) string {
     })
 
     var sb strings.Builder
-    sb.WriteString(constants.PlayerStyle.Render("\nYou"))
+    sb.WriteString(fmt.Sprintf("%s - %s", constants.PlayerStyle.Render("\nYou"), network.Port))
 
     // ... To then build a string out of
     for _, peer := range arr {
-        sb.WriteString("\n")
-		sb.WriteString(peer.style.Render(peer.name))
+		sb.WriteString(fmt.Sprintf("\n%s - %s", peer.style.Render(peer.name), peer.id))
     }
 
     return sb.String()

@@ -1,8 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
+	"log"
 	"math/rand"
+	"net"
 	"net/url"
 	"p2p/src/constants"
 	"p2p/src/mines"
@@ -10,7 +13,6 @@ import (
 	"p2p/src/tui"
 	"strings"
 	"time"
-    "flag"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -21,14 +23,21 @@ func main() {
     flag.BoolVar(&borders, "b", false, "Adds borders to minefield")
     flag.Parse()
 
+    // Automatically set port
+    listener, err := net.Listen("tcp", ":0")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println(listener.Addr().String())
+    network.Port = fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)
 
     rng, seed := rng()
     field := mines.InitField(constants.Size)
 	program := tea.NewProgram(tui.NewModel(field, rng, borders, &seed), tea.WithAltScreen())
+
     // Config thingy
 	var hostq, name string
-	fmt.Print("Port: ")
-	fmt.Scanln(&network.Port)
 	fmt.Print("Name: ")
 	fmt.Scanln(&name)
 	fmt.Print("Host? y/n: ")
@@ -44,7 +53,7 @@ func main() {
 		network.Connect(program, url, name, &seed)
 	}
 
-    network.Serve(program, name, &seed, field)
+    network.Serve(listener, program, name, &seed, field)
 
    	program.Run()
 

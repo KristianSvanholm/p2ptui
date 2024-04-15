@@ -45,7 +45,7 @@ func NewModel(field *mines.Field, rng rand.Rand, borders bool, seed *string) *Mo
 	chat := make([]string, 0)
 
 	vp := viewport.New(41, 23)
-    pp := viewport.New(10,23)
+    pp := viewport.New(40,23)
 	cp := viewport.New(41, 10)
 	cp.SetContent("Welcome!")
 

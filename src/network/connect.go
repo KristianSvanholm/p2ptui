@@ -8,6 +8,7 @@ import (
 	"p2p/src/constants"
 	"p2p/src/mines"
 	"p2p/src/structs"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gorilla/websocket"
@@ -34,7 +35,9 @@ func ConnectionHandler(w http.ResponseWriter, r *http.Request, program *tea.Prog
 
     ips := ips() // Get list before adding new peer (!)
 
-	p := addPeer(connection, r.Header.Get("Origin"), name, nil)
+    ip := strings.Split(r.RemoteAddr, ":")[0]
+
+    p := addPeer(connection, ip+":"+r.Header.Get("Origin"), name, nil)
 	if p == nil {
 		return
 	}
@@ -50,7 +53,7 @@ func ConnectionHandler(w http.ResponseWriter, r *http.Request, program *tea.Prog
 func Connect(program *tea.Program, url url.URL, name string, seed *string) {
 
 	header := http.Header{}
-	header.Set("Origin", "0.0.0.0:"+Port)
+    header.Set("Origin", Port)
 	connection, errcode, err := websocket.DefaultDialer.Dial(url.String(), header)
 	if err != nil {
 		log.Fatal("Could not connect to network. Bye.\n", err, errcode)
