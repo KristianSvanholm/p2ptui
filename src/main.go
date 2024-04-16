@@ -30,9 +30,11 @@ func main() {
 
 	network.Port = fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)
 
+	stop := make(chan int)
+
 	rng, seed := rng()
 	field := mines.InitField(constants.Size)
-	program := tea.NewProgram(tui.NewModel(field, rng, borders, &seed), tea.WithAltScreen())
+	program := tea.NewProgram(tui.NewModel(field, rng, borders, &seed, stop), tea.WithAltScreen())
 
 	// Config thingy
 	var hostq, name string
@@ -53,8 +55,11 @@ func main() {
 
 	network.Serve(listener, program, name, &seed, field)
 
-	program.Run()
+	go program.Run()
 
+	program.Send(program)
+
+	<-stop
 }
 
 // Sets the seed for future rng

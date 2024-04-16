@@ -28,9 +28,11 @@ type Model struct {
 	peerport viewport.Model
 	chatport viewport.Model
 	textarea textarea.Model
+	stop     chan int
+	program  *tea.Program
 }
 
-func NewModel(field *mines.Field, rng rand.Rand, borders bool, seed *string) *Model {
+func NewModel(field *mines.Field, rng rand.Rand, borders bool, seed *string, stop chan int) *Model {
 
 	b := lipgloss.HiddenBorder()
 	if borders {
@@ -62,6 +64,7 @@ func NewModel(field *mines.Field, rng rand.Rand, borders bool, seed *string) *Mo
 		gameport: vp,
 		peerport: pp,
 		chatport: cp,
+		stop:     stop,
 	}
 }
 
@@ -87,6 +90,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	old_c := c
 
 	switch msg := msg.(type) {
+	case int:
+		m.status = "HALLELUJA"
+	case *tea.Program:
+		m.program = msg
+		go msg.Send(69)
 	case structs.Movement:
 		m.peers[msg.Id].move(msg.Pos) // Peer movement
 	case structs.Join:
@@ -145,6 +153,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyCtrlC, tea.KeyEsc: // Exit program
 			// Todo:: Inform the peers
+			m.stop <- 1
 			return m, tea.Quit
 
 		}
@@ -168,7 +177,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	return fmt.Sprintf("%s\n%s\n%s\n%s",
+
+	str := "no"
+	if m.program != nil {
+		str = "yes"
+	}
+
+	return fmt.Sprintf("%s\n%s\n%s\n%s\n%s",
+		str,
 		m.status,
 		lipgloss.JoinHorizontal(lipgloss.Top, m.gameport.View(), m.peerport.View()),
 		m.chatport.View(),
