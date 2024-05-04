@@ -47,6 +47,11 @@ func main() {
 		var ntwrk string
 		fmt.Print("Host address: ")
 		fmt.Scanln(&ntwrk)
+
+		// If only port supplied, assume local network
+		if !strings.Contains(ntwrk, ":") {
+			ntwrk = "0.0.0.0:" + ntwrk
+		}
 		url := url.URL{Scheme: "ws", Host: ntwrk, Path: "/api/connect/"}
 
 		// Connect to node
