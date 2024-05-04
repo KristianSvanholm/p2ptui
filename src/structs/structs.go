@@ -9,10 +9,12 @@ type Coords struct {
 	Y int `json:"y"`
 }
 
+// Shorthand for creating new coords at 0,0
 func (c Coords) New() *Coords {
 	return &Coords{X: 0, Y: 0}
 }
 
+// returns coords from an interface of coords JSON.
 func (c Coords) FromData(data interface{}) Coords {
 	d := data.(map[string]interface{})
 	c.X = int(d["x"].(float64))
@@ -21,6 +23,7 @@ func (c Coords) FromData(data interface{}) Coords {
 	return c
 }
 
+// Limits a Coord to not go out of the game board bounds.
 func (c *Coords) Normalize() *Coords {
 	if c.X < 0 {
 		c.X = constants.Size - 1
@@ -37,6 +40,7 @@ func (c *Coords) Normalize() *Coords {
 	return c
 }
 
+// A cell in a Mine Field
 type Cell struct {
 	Revealed bool `json:"revealed"`
 	Mine     bool `json:"mine"`
@@ -44,36 +48,38 @@ type Cell struct {
 	Count    int  `json:"count"`
 }
 
+// ====== networked program events which are handled in model.Update(...) ======
+
 type Join struct {
-	Id   string
-	Pos  Coords
-	Name string
+	Id   string // Who
+	Pos  Coords // Where
+	Name string // What
 }
 
 type StatusUpdate struct {
-	Update string
+	Update string // What
 }
 
 type Movement struct {
-	Id  string
-	Pos Coords
+	Id  string // Who
+	Pos Coords // Where
 }
 
 type Action struct {
-	Pos Coords
-	Dig bool
-	Id  string
+	Pos Coords // Where
+	Dig bool   // What
+	Id  string // Who
 }
 
 type Chat struct {
-	Id  string
-	Txt string
+	Id  string // Who
+	Txt string // What
 }
 
 type join struct {
-	Id string
+	Id string // Who
 }
 
 type Leave struct {
-	Id string
+	Id string // Who
 }

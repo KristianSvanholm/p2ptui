@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// The central data structure for UI, controls and game state
 type Model struct {
 	status   string
 	player   *structs.Coords
@@ -30,8 +31,10 @@ type Model struct {
 	textarea textarea.Model
 }
 
+// Initiazes a model
 func NewModel(field *mines.Field, rng rand.Rand, borders bool, seed *string) *Model {
 
+	// Borders or not in table
 	b := lipgloss.HiddenBorder()
 	if borders {
 		b = lipgloss.NormalBorder()
@@ -69,6 +72,7 @@ func (m *Model) Init() tea.Cmd {
 	return textarea.Blink
 }
 
+// Main game loop.
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		taCmd tea.Cmd
@@ -77,6 +81,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		ppCmd tea.Cmd
 	)
 
+	// Run update function on all TUI components.
 	m.textarea, taCmd = m.textarea.Update(msg)
 	m.gameport, gpCmd = m.gameport.Update(msg)
 	m.chatport, cpCmd = m.chatport.Update(msg)
@@ -86,13 +91,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var c = *m.player
 	old_c := c
 
+	// Handle any incoming messages.
 	switch msg := msg.(type) {
-	case structs.Movement:
-		m.peers[msg.Id].move(msg.Pos) // Peer movement
-	case structs.Join:
-		m.peers[msg.Id] = createUIPeer(msg) // Peer joining
-	case structs.Leave:
-		delete(m.peers, msg.Id) // Peer leaving
+	case structs.Movement: // Peer movement
+		m.peers[msg.Id].move(msg.Pos)
+	case structs.Join: // Peer joining
+		m.peers[msg.Id] = createUIPeer(msg)
+	case structs.Leave: // Peer leaving
+		delete(m.peers, msg.Id)
 	case structs.Chat: // Peer Chatting
 		p := m.peers[msg.Id]
 		m.chat = append(m.chat, chatter(p.name, msg.Txt, p.style))
@@ -105,12 +111,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.status = "Win!"
 			}
 		}
-	case mines.Field:
-		*m.Field = msg // Peer shares current MineField
-	case structs.StatusUpdate:
-		m.status = msg.Update // Headline is update (sys info)
-	case rand.Rand:
-		m.Rng = &msg // New peer updates seed
+	case mines.Field: // Peer shares current MineField
+		*m.Field = msg
+	case structs.StatusUpdate: // Set status field text.
+		m.status = msg.Update
+	case rand.Rand: // New peer updates seed.
+		m.Rng = &msg
 	case tea.KeyMsg: // Local user key inputs
 
 		switch msg.Type {
@@ -144,16 +150,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case tea.KeyCtrlC, tea.KeyEsc: // Exit program
-			// Todo:: Inform the peers
 			return m, tea.Quit
-
 		}
 	}
 
 	// Prevent out of field coordinates
 	*m.player = *c.Normalize()
 
-	board := generateBoard(m.Field)
+	board := generateBoard(m.Field) // Generate new board based on current game state
 
 	if old_c != c { // Broadcast move if not same position
 		network.Broadcast(c, constants.Move)
@@ -161,12 +165,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Update TUI contents
 	m.gameport.SetContent(newTable(board, m).Render())
-	m.chatport.SetContent(strings.Join(m.chat, "")) // No clue why a newline is not required here :P
+	m.chatport.SetContent(strings.Join(m.chat, "")) // Seemingly no newline is required here as the messages come with an attached \n.
 	m.peerport.SetContent(peerList(m.peers))
 
 	return m, tea.Batch(taCmd, gpCmd, cpCmd, ppCmd)
 }
 
+// Formats the actual TUI through string operations.
 func (m *Model) View() string {
 	return fmt.Sprintf("%s\n%s\n%s\n%s",
 		m.status,

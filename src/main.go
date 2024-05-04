@@ -30,31 +30,36 @@ func main() {
 
 	network.Port = fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)
 
+	// Init TUI
 	rng, seed := rng()
 	field := mines.InitField(constants.Size)
 	program := tea.NewProgram(tui.NewModel(field, rng, borders, &seed), tea.WithAltScreen())
 
-	// Config thingy
+	// Simple setup wizard.
 	var hostq, name string
-	fmt.Print("Name: ")
-	fmt.Scanln(&name)
-	fmt.Print("Host? y/n: ")
-	fmt.Scanln(&hostq)
+	hostq = "n"
+	name = "krs"
+	//fmt.Print("Name: ")
+	//fmt.Scanln(&name)
+	//fmt.Print("Host? y/n: ") // Host only to indicate first node in network.
+	//fmt.Scanln(&hostq)
 	hostq = strings.ToLower(hostq)
 
 	if hostq != "y" {
 		var ntwrk string
 		fmt.Print("Host address: ")
-		fmt.Scanln(&ntwrk)
+		//fmt.Scanln(&ntwrk)
+		ntwrk = "0.0.0.0:63877"
 		url := url.URL{Scheme: "ws", Host: ntwrk, Path: "/api/connect/"}
 
-		network.Connect(program, url, name, &seed)
+		// Connect to node
+		network.Connect(program, url, name, &seed, true)
 	}
 
+	//Serve simple webserver
 	network.Serve(listener, program, name, &seed, field)
 
 	program.Run()
-
 }
 
 // Sets the seed for future rng

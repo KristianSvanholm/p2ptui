@@ -21,10 +21,12 @@ type UIPeer struct {
 	pos   structs.Coords
 }
 
+// Simply updates a UIPeers position.
 func (p *UIPeer) move(pos structs.Coords) {
 	p.pos = pos
 }
 
+// Intitializes a new table to display board with stylings
 func newTable(board [][]string, m *Model) *table.Table {
 	return table.New().
 		Border(m.border).
@@ -32,6 +34,8 @@ func newTable(board [][]string, m *Model) *table.Table {
 		BorderColumn(true).
 		Rows(board...).
 		StyleFunc(func(row, col int) lipgloss.Style {
+			// This is run for each cell in table
+			// and decides its style.
 
 			c := structs.Coords{X: col, Y: row - 1}
 
@@ -47,10 +51,12 @@ func newTable(board [][]string, m *Model) *table.Table {
 				}
 			}
 
+			// No player or peer on cell.
 			return lipgloss.NewStyle().Padding(0, 1)
 		})
 }
 
+// Sets TUI status to reflect game state after an action.
 func handleDigEvent(m *Model, event constants.DigEvent, name string) {
 	switch event {
 	case constants.Nothing:
@@ -61,10 +67,12 @@ func handleDigEvent(m *Model, event constants.DigEvent, name string) {
 	}
 }
 
+// Applies peer color to any peers' message
 func chatter(name string, text string, style lipgloss.Style) string {
 	return fmt.Sprintf("%s: %s", style.Render(name), text)
 }
 
+// Generates a board content based on the current field state.
 func generateBoard(f *mines.Field) [][]string {
 	size := constants.Size
 
@@ -97,6 +105,7 @@ func generateBoard(f *mines.Field) [][]string {
 
 var colorIndex int
 
+// New ui peer
 func createUIPeer(peer structs.Join) *UIPeer {
 	colors := []int{199, 33, 46, 202, 14}
 	colorIndex++
@@ -112,6 +121,7 @@ func createUIPeer(peer structs.Join) *UIPeer {
 	}
 }
 
+// Convert peer map into sorted list of currently connected peers.
 func peerList(peers map[string]*UIPeer) string {
 
 	arr := make([]*UIPeer, len(peers))

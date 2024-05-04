@@ -13,6 +13,7 @@ var PlayerStyle lipgloss.Style = lipgloss.NewStyle().
 	Padding(0, 1).
 	Foreground(lipgloss.ANSIColor(160))
 
+// Enum for switching on results of digging up a cell
 type DigEvent int
 
 const (
@@ -21,6 +22,7 @@ const (
 	Landmine
 )
 
+// Enum for switching on any network request.
 type WsEvent int
 
 const (

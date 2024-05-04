@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Serves simple webserver to facilitate connection for new peers.
 func Serve(listener net.Listener, program *tea.Program, name string, seed *string, field *mines.Field) {
 	http.HandleFunc("/api/connect/", func(w http.ResponseWriter, r *http.Request) {
 		ConnectionHandler(w, r, program, name, seed, field)

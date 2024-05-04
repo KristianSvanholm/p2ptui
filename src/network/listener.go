@@ -13,29 +13,33 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// Listen to peers WS connection.
 func listen(program *tea.Program, peer *Peer, name string, seed *string) {
+
 	for {
+
+		// Read packet
 		pkt := Packet{}
 		err := peer.Socket.ReadJSON(&pkt)
 		if err != nil {
 			leave(program, peer)
-			return
+			return // Exit loop.
 		}
 
 		switch pkt.Channel {
-		case constants.Chat:
+		case constants.Chat: // Peer sent a chat message
 			chat(program, peer, pkt.Data.(string))
-		case constants.Hello:
+		case constants.Hello: // Peer introduced themselves
 			hello(program, peer, pkt.Data)
-		case constants.Leave:
+		case constants.Leave: // Peer left
 			leave(program, peer)
-		case constants.Welcome:
+		case constants.Welcome: // Peer welcomes you with game state and other peers.
 			welcome(program, pkt.Data, name, seed)
-		case constants.Move:
+		case constants.Move: // Peer moves their cursor on board
 			move(program, peer, pkt.Data)
-		case constants.Flag:
+		case constants.Flag: // Peer plants a flag
 			Act(program, peer, pkt.Data, false)
-		case constants.Dig:
+		case constants.Dig: // Peer digs a cell
 			Act(program, peer, pkt.Data, true)
 		}
 	}
@@ -51,20 +55,21 @@ func chat(program *tea.Program, peer *Peer, msg string) {
 func hello(program *tea.Program, peer *Peer, data interface{}) {
 	d := data.(map[string]interface{})
 
-	peer.Name = d["name"].(string)
+	peer.Name = d["name"].(string) // Their name
 
-	c := structs.Coords{}.FromData(d["pos"])
+	c := structs.Coords{}.FromData(d["pos"]) // Their location
 
-	seed, hasSeed := d["seed"]
+	seed, hasSeed := d["seed"] // The new seed (optional)
 	if hasSeed {
 		program.Send(structs.StatusUpdate{fmt.Sprintf("New seed: %s", seed.(string))})
 		s, err := strconv.Atoi(seed.(string))
 		if err != nil {
-			// Uh-oh
+			// Uh-oh :)
 		}
-		program.Send(*rand.New(rand.NewSource(int64(s))))
+		program.Send(*rand.New(rand.NewSource(int64(s)))) // Update game RNG.
 	}
 
+	// Inform TUI
 	program.Send(structs.Join{
 		Id:   peer.Ip,
 		Pos:  c,
@@ -79,7 +84,7 @@ func leave(program *tea.Program, peer *Peer) {
 	peer.Socket.Close()
 	delete(Peers, peer.Ip) // Remove from network peer map
 
-	// Notify to UI
+	// Notify TUI
 	program.Send(structs.Leave{peer.Ip})
 }
 
@@ -91,13 +96,13 @@ func welcome(program *tea.Program, data interface{}, name string, seed *string) 
 	field := mines.Field{}
 	mapstructure.Decode(d["field"], &field)
 
-	program.Send(field)
+	program.Send(field) // Update game field.
 
 	// Connect to all discovered peers
 	for _, ip := range d["others"].([]interface{}) {
 		addr := fmt.Sprintf("%v", ip)
 		url := url.URL{Scheme: "ws", Host: addr, Path: "/api/connect/"}
-		Connect(program, url, name, seed)
+		Connect(program, url, name, seed, false)
 	}
 }
 
