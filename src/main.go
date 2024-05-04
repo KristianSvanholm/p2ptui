@@ -37,19 +37,16 @@ func main() {
 
 	// Simple setup wizard.
 	var hostq, name string
-	hostq = "n"
-	name = "krs"
-	//fmt.Print("Name: ")
-	//fmt.Scanln(&name)
-	//fmt.Print("Host? y/n: ") // Host only to indicate first node in network.
-	//fmt.Scanln(&hostq)
+	fmt.Print("Name: ")
+	fmt.Scanln(&name)
+	fmt.Print("Host? y/n: ") // Host only to indicate first node in network.
+	fmt.Scanln(&hostq)
 	hostq = strings.ToLower(hostq)
 
 	if hostq != "y" {
 		var ntwrk string
 		fmt.Print("Host address: ")
-		//fmt.Scanln(&ntwrk)
-		ntwrk = "0.0.0.0:63877"
+		fmt.Scanln(&ntwrk)
 		url := url.URL{Scheme: "ws", Host: ntwrk, Path: "/api/connect/"}
 
 		// Connect to node
