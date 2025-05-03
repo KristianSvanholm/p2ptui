@@ -1,7 +1,7 @@
 package network
 
 import (
-	"p2p/src/constants"
+	"github.com/kristiansvanholm/p2ptui/src/constants"
 	"sync"
 
 	"github.com/gorilla/websocket"

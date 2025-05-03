@@ -1,7 +1,7 @@
 package network
 
 import (
-	"p2p/src/structs"
+	"github.com/kristiansvanholm/p2ptui/src/structs"
 )
 
 var Port string

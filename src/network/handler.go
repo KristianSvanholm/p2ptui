@@ -3,7 +3,7 @@ package network
 import (
 	"net"
 	"net/http"
-	"p2p/src/mines"
+	"github.com/kristiansvanholm/p2ptui/src/mines"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

@@ -2,8 +2,8 @@ package mines
 
 import (
 	"math/rand"
-	"p2p/src/constants"
-	"p2p/src/structs"
+	"github.com/kristiansvanholm/p2ptui/src/constants"
+	"github.com/kristiansvanholm/p2ptui/src/structs"
 	"sync"
 )
 

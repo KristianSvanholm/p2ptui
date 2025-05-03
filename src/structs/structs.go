@@ -1,7 +1,7 @@
 package structs
 
 import (
-	"p2p/src/constants"
+	"github.com/kristiansvanholm/p2ptui/src/constants"
 )
 
 type Coords struct {

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"math/rand"
 	"net/url"
-	"p2p/src/constants"
-	"p2p/src/mines"
-	"p2p/src/structs"
+	"github.com/kristiansvanholm/p2ptui/src/constants"
+	"github.com/kristiansvanholm/p2ptui/src/mines"
+	"github.com/kristiansvanholm/p2ptui/src/structs"
 	"strconv"
 
 	tea "github.com/charmbracelet/bubbletea"
