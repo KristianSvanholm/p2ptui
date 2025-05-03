@@ -1,4 +1,4 @@
-module p2p
+module github.com/kristiansvanholm/p2ptui
 
 go 1.22.2
 
